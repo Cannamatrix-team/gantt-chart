@@ -1067,21 +1067,54 @@
 
     // ========== AUTO ROLLUP ==========
     function performAutoRollup() {
+      if (!tasks.length) return;
       const maxLvl = Math.max(...tasks.map(t => t.level || 1));
+      const changed = [];
       for (let lvl = maxLvl - 1; lvl >= 1; lvl--) {
-        tasks.filter(t => t.level === lvl && t.autoRollup).forEach(p => {
-          const children = tasks.filter(c => c.wbs !== p.wbs && String(c.wbs).startsWith(p.wbs + '.'));
-          if (children.length) {
-            const dates = children.filter(c => c.start && c.end).flatMap(c => [parseLocalDate(c.start), parseLocalDate(c.end)]);
-            if (dates.length) {
-              p.start = fmtDate(new Date(Math.min(...dates)));
-              p.end = fmtDate(new Date(Math.max(...dates)));
-              p.duration = Math.ceil((parseLocalDate(p.end) - parseLocalDate(p.start)) / 864e5) + 1;
-              const withDur = children.filter(c => c.duration > 0);
-              if (withDur.length) { const total = withDur.reduce((s, c) => s + c.duration, 0); p.progress = Math.round(withDur.reduce((s, c) => s + (c.progress || 0) * c.duration, 0) / total); }
-            }
+        tasks.filter(t => (t.level || 1) === lvl).forEach(p => {
+          // Direct children only — one WBS level below this parent
+          const pDepth = String(p.wbs).split('.').length;
+          const directChildren = tasks.filter(c =>
+            String(c.wbs).startsWith(p.wbs + '.') &&
+            String(c.wbs).split('.').length === pDepth + 1
+          );
+          if (!directChildren.length) return; // leaf task, nothing to roll up
+          if (p.autoRollup === false) return; // user explicitly opted out
+
+          const dates = directChildren.filter(c => c.start && c.end)
+            .flatMap(c => [parseLocalDate(c.start), parseLocalDate(c.end)]);
+          if (!dates.length) return;
+
+          const newStart = fmtDate(new Date(Math.min(...dates)));
+          const newEnd = fmtDate(new Date(Math.max(...dates)));
+          const newDuration = Math.ceil((parseLocalDate(newEnd) - parseLocalDate(newStart)) / 864e5) + 1;
+
+          let newProgress = p.progress || 0;
+          const withDur = directChildren.filter(c => c.duration > 0);
+          if (withDur.length) {
+            const total = withDur.reduce((s, c) => s + c.duration, 0);
+            newProgress = Math.round(withDur.reduce((s, c) => s + (c.progress || 0) * c.duration, 0) / total);
+          }
+
+          if (p.start !== newStart || p.end !== newEnd || p.progress !== newProgress) {
+            p.start = newStart;
+            p.end = newEnd;
+            p.duration = newDuration;
+            p.progress = newProgress;
+            changed.push(p);
           }
         });
+      }
+      // Persist rolled-up changes to Firebase so other clients see them
+      if (changed.length && tasksRef) {
+        const updates = {};
+        changed.forEach(t => {
+          updates[t.id + '/start'] = t.start;
+          updates[t.id + '/end'] = t.end;
+          updates[t.id + '/duration'] = t.duration;
+          updates[t.id + '/progress'] = t.progress;
+        });
+        tasksRef.update(updates);
       }
     }
 
@@ -1369,7 +1402,7 @@
       const newTask = {
         id: 'task_' + Date.now(), wbs: newWbs, name: 'New Task', level: newWbs.split('.').length,
         assigned: '', start: today, end: today, duration: 1, progress: 0,
-        dependencies: [], autoRollup: newWbs.split('.').length === 1, collapsed: false
+        dependencies: [], autoRollup: true, collapsed: false
       };
       tasks.push(newTask);
       tasks.sort((a, b) => String(a.wbs).localeCompare(String(b.wbs), undefined, { numeric: true }));
@@ -1396,7 +1429,7 @@
       const newTask = {
         id: 'task_' + Date.now(), wbs: newWbs, name: 'New Subtask', level: newWbs.split('.').length,
         assigned: '', start: parent.start, end: parent.end, duration: parent.duration || 1, progress: 0,
-        dependencies: [], autoRollup: false, collapsed: false
+        dependencies: [], autoRollup: true, collapsed: false
       };
       parent.collapsed = false;
       saveTaskToDb(parent);
