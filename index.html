@@ -217,26 +217,43 @@
       cursor: grab; color: #aaa; font-size: 14px; user-select: none; width: 100%; height: 100%;
     }
     .task-row:hover .drag-handle { display: flex; }
-    .task-row.dragging { opacity: 0.3; }
+    .task-row.dragging { opacity: 0.25; pointer-events: none; }
 
     .drag-floating-ghost {
       position: fixed; pointer-events: none; z-index: 5000;
-      background: white; border: 1px solid #d0d0d0; border-radius: 6px;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.18); padding: 6px 12px;
-      font-size: 12px; color: #333; opacity: 0.85; white-space: nowrap;
-      max-width: 250px; overflow: hidden; text-overflow: ellipsis;
-      transform: translate(12px, -50%);
+      display: grid; grid-template-columns: 30px 60px 1fr;
+      align-items: center; gap: 0; padding: 0 10px; height: 36px;
+      background: white; border: 1px solid #c0c8d4; border-radius: 6px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.18), 0 1px 4px rgba(0,0,0,0.1);
+      font-size: 13px; color: #333; opacity: 0.92;
+      max-width: 340px; transform: translate(8px, -50%);
+    }
+    .drag-floating-ghost .ghost-row-wbs {
+      font-family: 'SF Mono', Monaco, monospace; font-size: 11px; color: #888;
+    }
+    .drag-floating-ghost .ghost-row-name {
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;
+    }
+    .drag-floating-ghost .ghost-row-icon {
+      color: #aaa; font-size: 14px; text-align: center;
     }
 
     .drop-indicator-line {
-      position: absolute; height: 3px; background: #1a73e8;
-      z-index: 25; pointer-events: none; border-radius: 2px;
-      right: 0; transition: top 0.06s ease-out, left 0.1s ease-out;
+      position: absolute; height: 2px; background: #1a73e8;
+      z-index: 25; pointer-events: none; border-radius: 1px;
+      left: 0; right: 0;
     }
     .drop-indicator-line::before {
-      content: ''; position: absolute; left: -3px; top: -3px;
-      width: 9px; height: 9px; border-radius: 50%; background: #1a73e8;
+      content: ''; position: absolute; left: -4px; top: -4px;
+      width: 10px; height: 10px; border-radius: 50%; background: #1a73e8;
     }
+    .drop-indicator-line::after {
+      content: ''; position: absolute; right: -4px; top: -4px;
+      width: 10px; height: 10px; border-radius: 50%; background: #1a73e8;
+    }
+
+    .task-row.drop-target-above { box-shadow: inset 0 2px 0 0 #1a73e8; }
+    .task-row.drop-target-below { box-shadow: inset 0 -2px 0 0 #1a73e8; }
 
     .inline-edit-input {
       width: 100%; padding: 2px 6px; border: 2px solid #1a73e8; border-radius: 4px;
@@ -1414,9 +1431,8 @@
     let dragIndicatorLine = null;
     let dropTargetInfo = null;
     let dragNameColumnX = 0;
-    const dragLevelPxStep = 30;
-    // Indent px per level must match the task-name padding-left formula: (level-1)*12
-    const INDENT_PX = 12;
+    const DRAG_LEVEL_ZONE = 30; // px per hierarchy level zone
+    const INDENT_PX = 12; // must match task-name padding-left formula
 
     function resetDragState() {
       isTaskListDragging = false;
@@ -1440,7 +1456,7 @@
       if (!draggedTask) return;
       const draggedWbs = String(draggedTask.wbs);
 
-      // Dim dragged row AND its children
+      // Dim dragged row AND its descendant children
       document.querySelectorAll('.task-row').forEach(row => {
         const rowTask = tasks.find(t => t.id === row.dataset.taskId);
         if (rowTask && (rowTask.id === id || String(rowTask.wbs).startsWith(draggedWbs + '.'))) {
@@ -1448,21 +1464,24 @@
         }
       });
 
-      // Compute dragNameColumnX: left edge of the Name column in the grid
-      // Grid columns: 30px(drag) + 30px(expand) + 60px(wbs) = 120px offset
+      // Compute dragNameColumnX — left edge of the Name column
+      // Grid: 30px(drag handle) + 30px(expand) + 60px(wbs) = 120px
       const taskList = document.getElementById('taskList');
       const taskListRect = taskList.getBoundingClientRect();
       dragNameColumnX = taskListRect.left + 120;
 
-      // Create floating ghost that follows cursor
+      // Create floating ghost — mini row that follows cursor
       dragFloatingGhost = document.createElement('div');
       dragFloatingGhost.className = 'drag-floating-ghost';
-      dragFloatingGhost.textContent = draggedTask.name;
+      dragFloatingGhost.innerHTML = `
+        <span class="ghost-row-icon">\u2807</span>
+        <span class="ghost-row-wbs">${draggedTask.wbs}</span>
+        <span class="ghost-row-name">${draggedTask.name}</span>`;
       document.body.appendChild(dragFloatingGhost);
       dragFloatingGhost.style.left = e.clientX + 'px';
       dragFloatingGhost.style.top = e.clientY + 'px';
 
-      // Create indicator line inside the task list
+      // Create the blue indicator line inside task list
       dragIndicatorLine = document.createElement('div');
       dragIndicatorLine.className = 'drop-indicator-line';
       dragIndicatorLine.style.display = 'none';
@@ -1482,57 +1501,55 @@
       }
 
       const taskList = document.getElementById('taskList');
-      const allRows = Array.from(taskList.querySelectorAll('.task-row'));
-      const rows = allRows.filter(r => !r.classList.contains('dragging'));
-      if (!rows.length) return;
+      const rows = Array.from(taskList.querySelectorAll('.task-row:not(.dragging)'));
+      if (!rows.length) { dropTargetInfo = null; return; }
 
       const draggedTask = tasks.find(t => t.id === draggedTaskId);
       if (!draggedTask) return;
 
       const listRect = taskList.getBoundingClientRect();
 
-      // 1. Find insertion gap — closest gap between rows (or top/bottom)
-      let insertAfterIdx = -1; // -1 = before first row
-      let closestDist = Infinity;
+      // 1. Find which gap (between rows) the cursor is nearest to
+      //    We check the midpoint of each row — if cursor is above mid, insert before; below mid, insert after.
+      let insertAfterIdx = -1; // -1 = before all rows
+      let bestDist = Infinity;
 
       rows.forEach((row, i) => {
         const rect = row.getBoundingClientRect();
-        const bottomY = rect.bottom;
-        const dist = Math.abs(e.clientY - bottomY);
-        if (dist < closestDist) {
-          closestDist = dist;
+        const mid = rect.top + rect.height / 2;
+        // Distance to the bottom edge of this row (= the gap after this row)
+        const distBottom = Math.abs(e.clientY - rect.bottom);
+        if (distBottom < bestDist) {
+          bestDist = distBottom;
           insertAfterIdx = i;
         }
       });
 
-      // Check if above the first row entirely
+      // If cursor is above the first row's top edge, insert before everything
       if (rows.length > 0) {
-        const firstRect = rows[0].getBoundingClientRect();
-        if (Math.abs(e.clientY - firstRect.top) < closestDist) {
+        const topDist = Math.abs(e.clientY - rows[0].getBoundingClientRect().top);
+        if (topDist < bestDist) {
           insertAfterIdx = -1;
         }
       }
 
-      // Task above the insertion gap
+      // The task "above" the gap
       const taskAboveRow = insertAfterIdx >= 0 ? rows[insertAfterIdx] : null;
       const taskAbove = taskAboveRow ? tasks.find(t => t.id === taskAboveRow.dataset.taskId) : null;
 
-      // Also look at the task below the gap to constrain max level
-      const taskBelowRow = insertAfterIdx + 1 < rows.length ? rows[insertAfterIdx + 1] : null;
-      const taskBelow = taskBelowRow ? tasks.find(t => t.id === taskBelowRow.dataset.taskId) : null;
+      // 2. Calculate target level from horizontal mouse position
+      //    Moving mouse right = deeper indent (child), left = shallower (outdent)
+      const xOffset = e.clientX - dragNameColumnX;
+      let rawLevel = 1 + Math.round(xOffset / DRAG_LEVEL_ZONE);
 
-      // 2. Calculate target level from horizontal cursor position
-      const offset = e.clientX - dragNameColumnX;
-      let rawLevel = 1 + Math.round(offset / dragLevelPxStep);
-
-      // Clamp: min = 1, max = taskAbove.level + 1 (can become child of task above)
-      const maxLevel = taskAbove ? taskAbove.level + 1 : 1;
+      // Clamp: min 1, max taskAbove.level + 1 (can only nest one deeper than row above)
+      const maxLevel = taskAbove ? (taskAbove.level || 1) + 1 : 1;
       let targetLevel = Math.max(1, Math.min(maxLevel, rawLevel));
 
-      // If inserting at top, force level 1
+      // At the very top, must be level 1
       if (!taskAbove) targetLevel = 1;
 
-      // 3. Position the indicator line
+      // 3. Position the blue indicator line
       if (dragIndicatorLine) {
         let lineTop;
         if (taskAboveRow) {
@@ -1541,17 +1558,20 @@
         } else {
           lineTop = 0;
         }
-        // Indent the line to reflect hierarchy: align with name column + level indent
-        // 120px = first 3 grid columns, then (level-1)*INDENT_PX for hierarchy
-        const lineLeft = 120 + (targetLevel - 1) * INDENT_PX;
+
+        // Indent the line: name column starts at ~120px, then add hierarchy indent
+        const indent = 120 + (targetLevel - 1) * INDENT_PX;
+
         dragIndicatorLine.style.display = 'block';
         dragIndicatorLine.style.top = lineTop + 'px';
-        dragIndicatorLine.style.left = lineLeft + 'px';
+        dragIndicatorLine.style.left = indent + 'px';
       }
 
-      // 4. Store drop target info
-      const insertAfterTaskId = taskAboveRow ? taskAboveRow.dataset.taskId : null;
-      dropTargetInfo = { insertAfterTaskId, targetLevel };
+      // 4. Store target info
+      dropTargetInfo = {
+        insertAfterTaskId: taskAboveRow ? taskAboveRow.dataset.taskId : null,
+        targetLevel
+      };
     }
 
     function handleTaskListDragEnd(e) {
@@ -1566,81 +1586,80 @@
         const targetLevel = dropTargetInfo.targetLevel;
         const insertAfterTaskId = dropTargetInfo.insertAfterTaskId;
 
-        // Collect dragged task + children by WBS prefix
-        const movedTasks = tasks.filter(t => t.id === draggedTask.id || String(t.wbs).startsWith(draggedWbs + '.'));
+        // Collect dragged task + all its descendants
+        const movedTasks = tasks.filter(t =>
+          t.id === draggedTask.id || String(t.wbs).startsWith(draggedWbs + '.')
+        );
         const movedIds = new Set(movedTasks.map(t => t.id));
 
-        // Remove from array
+        // Remove moved tasks from the list
         const remaining = tasks.filter(t => !movedIds.has(t.id));
 
-        // Find insertion index (after target + its descendants)
+        // Find insertion index — after the target row + all its descendants
         let insertIdx;
         if (insertAfterTaskId) {
-          const targetIdx = remaining.findIndex(t => t.id === insertAfterTaskId);
-          if (targetIdx !== -1) {
-            const targetWbs = String(remaining[targetIdx].wbs);
-            insertIdx = targetIdx + 1;
-            while (insertIdx < remaining.length && String(remaining[insertIdx].wbs).startsWith(targetWbs + '.')) {
+          const tgtIdx = remaining.findIndex(t => t.id === insertAfterTaskId);
+          if (tgtIdx !== -1) {
+            const tgtWbs = String(remaining[tgtIdx].wbs);
+            insertIdx = tgtIdx + 1;
+            // Skip past target's descendants so we insert after the whole subtree
+            while (insertIdx < remaining.length &&
+                   String(remaining[insertIdx].wbs).startsWith(tgtWbs + '.')) {
               insertIdx++;
             }
           } else {
             insertIdx = 0;
           }
         } else {
-          insertIdx = 0;
+          insertIdx = 0; // Top of list
         }
 
-        // Adjust levels: shift moved tasks so dragged root lands at targetLevel
-        const levelDiff = targetLevel - draggedTask.level;
+        // Shift hierarchy levels: make the dragged task's root land at targetLevel
+        const levelDiff = targetLevel - (draggedTask.level || 1);
         movedTasks.forEach(t => {
           t.level = Math.max(1, (t.level || 1) + levelDiff);
         });
 
-        // Splice into position
+        // Insert into new position
         remaining.splice(insertIdx, 0, ...movedTasks);
         tasks.length = 0;
         tasks.push(...remaining);
 
-        // Rebuild WBS using counter-stack algorithm
+        // Rebuild all WBS numbers from the level structure
         rebuildAllWbs();
 
-        // Save all tasks to Firebase
+        // Persist
         tasks.forEach(t => saveTaskToDb(t));
       }
 
-      // Clean up
       resetDragState();
       render();
     }
 
     function rebuildAllWbs() {
-      // Walk tasks in order, assign WBS from levels using a counter stack
-      // Also build old->new WBS map to fix dependencies
+      // Save old WBS for dependency remapping
       const oldWbs = {};
-      tasks.forEach(t => oldWbs[t.id] = String(t.wbs));
+      tasks.forEach(t => { oldWbs[t.id] = String(t.wbs); });
 
+      // Counter-stack: walk tasks in order, assign WBS from levels
       const counters = [];
       tasks.forEach(t => {
         const level = t.level || 1;
-        // Grow stack if needed
         while (counters.length < level) counters.push(0);
-        // Trim stack if level decreased
         counters.length = level;
-        // Increment counter at this level
         counters[level - 1]++;
         t.wbs = counters.join('.');
       });
 
-      // Remap dependencies
-      const wbsRemap = {};
+      // Remap dependencies from old WBS to new WBS
+      const remap = {};
       tasks.forEach(t => {
-        const old = oldWbs[t.id];
-        if (old !== String(t.wbs)) wbsRemap[old] = String(t.wbs);
+        if (oldWbs[t.id] !== String(t.wbs)) remap[oldWbs[t.id]] = String(t.wbs);
       });
-      if (Object.keys(wbsRemap).length > 0) {
+      if (Object.keys(remap).length > 0) {
         tasks.forEach(t => {
           if (t.dependencies && t.dependencies.length) {
-            t.dependencies = t.dependencies.map(d => wbsRemap[d] || d);
+            t.dependencies = t.dependencies.map(d => remap[d] || d);
           }
         });
       }
