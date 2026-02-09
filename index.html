@@ -88,14 +88,26 @@
     .task-name { display: flex; align-items: center; gap: 6px; padding-right: 10px; overflow: hidden; }
     .task-name-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
     .task-assigned { font-size: 11px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .task-dates { font-size: 10px; color: #888; font-family: 'SF Mono', Monaco, monospace; }
+    .task-dates { font-size: 10px; color: #888; font-family: 'SF Mono', Monaco, monospace; cursor: pointer; border-radius: 3px; padding: 2px 4px; margin: -2px -4px; }
+    .task-dates:hover { background: #e8f0fe; color: #1a73e8; }
+
+    .date-edit-popup {
+      position: fixed; background: white; border-radius: 8px; padding: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.18); z-index: 3000; min-width: 200px;
+      border: 1px solid #e0e0e0;
+    }
+    .date-edit-popup label { display: block; font-size: 11px; font-weight: 600; color: #555; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.3px; }
+    .date-edit-popup input[type="date"] { width: 100%; padding: 6px 8px; border: 1px solid #ddd; border-radius: 5px; font-size: 13px; margin-bottom: 10px; font-family: inherit; }
+    .date-edit-popup input[type="date"]:focus { outline: none; border-color: #1a73e8; box-shadow: 0 0 0 2px rgba(26,115,232,0.15); }
+    .date-edit-popup input[type="date"]:last-child { margin-bottom: 0; }
     
     .gantt-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: white; }
     .gantt-header { display: flex; flex-direction: column; border-bottom: 2px solid #e0e0e0; background: #f8f9fa; position: sticky; top: 0; z-index: 100; }
     .gantt-months { display: flex; height: 24px; }
     .gantt-month { display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px; color: #333; border-right: 1px solid #e0e0e0; background: #f0f0f0; }
-    .gantt-days { display: flex; height: 22px; }
-    .gantt-day { display: flex; align-items: center; justify-content: center; font-size: 10px; color: #666; border-right: 1px solid #f0f0f0; min-width: var(--day-width); width: var(--day-width); }
+    .gantt-days { display: flex; height: 34px; }
+    .gantt-day { display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; color: #666; border-right: 1px solid #f0f0f0; min-width: var(--day-width); width: var(--day-width); gap: 0; line-height: 1.1; }
+    .gantt-day-letter { font-size: 8px; color: #999; text-transform: uppercase; font-weight: 500; }
     .gantt-day.weekend { background: #f5f5f5; color: #999; }
     .gantt-day.today { background: #fff3e0; color: #e65100; font-weight: 600; }
     .gantt-body-container { flex: 1; overflow: auto; position: relative; }
@@ -202,16 +214,16 @@
     .team-add-row button:hover { background: #1557b0; }
 
     .task-row-actions {
-      position: absolute; right: 4px; top: -1px; transform: translateY(-50%);
+      position: absolute; right: 4px; top: 2px;
       display: none; align-items: center; gap: 1px; background: white;
       border: 1px solid #d0d0d0; border-radius: 4px; padding: 1px 2px;
       box-shadow: 0 1px 4px rgba(0,0,0,0.1); z-index: 10;
     }
     .task-row:hover .task-row-actions { display: flex; }
     .task-action-btn {
-      width: 18px; height: 18px; border: none; background: none; border-radius: 3px;
-      cursor: pointer; font-size: 11px; color: #777; display: flex; align-items: center;
-      justify-content: center; transition: all 0.15s; padding: 0;
+      width: 16px; height: 16px; border: none; background: none; border-radius: 3px;
+      cursor: pointer; font-size: 10px; color: #777; display: flex; align-items: center;
+      justify-content: center; transition: all 0.15s; padding: 0; line-height: 1;
     }
     .task-action-btn:hover { background: #e8f0fe; color: #1a73e8; }
     .task-action-btn.danger:hover { background: #fce8e6; color: #ea4335; }
@@ -597,6 +609,7 @@
 
     // ========== RENDER ==========
     function render() {
+      closeDateEditor();
       performAutoRollup();
       calcProjectDates();
       renderTaskList();
@@ -643,7 +656,7 @@
           <span class="task-wbs">${task.wbs}</span>
           <span class="task-name" data-task-id="${task.id}" style="padding-left:${(task.level - 1) * 12}px"><button class="expand-btn ${task.collapsed ? 'collapsed' : ''} ${!hasChildren ? 'no-children' : ''}" onclick="toggleCollapse('${task.id}', event)">${task.collapsed ? '▶' : '▼'}</button><span class="task-name-text" title="${task.name}">${task.name}</span></span>
           <span class="task-assigned">${task.assigned || '-'}</span>
-          <span class="task-dates">${fmtDateShort(task.start)}-${fmtDateShort(task.end)}</span>
+          <span class="task-dates" onclick="event.stopPropagation();openDateEditor('${task.id}', this)">${fmtDateShort(task.start)}-${fmtDateShort(task.end)}</span>
           <div class="task-row-actions">
             <button class="task-action-btn" onclick="event.stopPropagation();outdentTask('${task.id}')" title="Outdent">←</button>
             <button class="task-action-btn" onclick="event.stopPropagation();indentTask('${task.id}')" title="Indent">→</button>
@@ -681,7 +694,8 @@
         const isWknd = cur.getDay() === 0 || cur.getDay() === 6;
         const isToday = cur.toDateString() === new Date().toDateString();
         day.className = `gantt-day${isWknd ? ' weekend' : ''}${isToday ? ' today' : ''}`;
-        day.textContent = cur.getDate();
+        const dayLetters = ['S','M','T','W','T','F','S'];
+        day.innerHTML = `<span class="gantt-day-letter">${dayLetters[cur.getDay()]}</span>${cur.getDate()}`;
         dc.appendChild(day);
         if (cur.getMonth() !== curMonth) {
           if (curMonth >= 0) { const m = document.createElement('div'); m.className = 'gantt-month'; m.style.width = (monthDays * dayWidth) + 'px'; m.textContent = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][curMonth]; mc.appendChild(m); }
@@ -1511,6 +1525,77 @@
       const id = inlineEditId;
       inlineEditId = null;
       render();
+    }
+
+    // ========== DATE EDITOR ==========
+    let activeDatePopup = null;
+
+    function openDateEditor(taskId, el) {
+      closeDateEditor();
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      const rect = el.getBoundingClientRect();
+      const popup = document.createElement('div');
+      popup.className = 'date-edit-popup';
+      popup.innerHTML = `
+        <label>Start</label>
+        <input type="date" id="dateEditStart" value="${task.start}">
+        <label>End</label>
+        <input type="date" id="dateEditEnd" value="${task.end}">`;
+      document.body.appendChild(popup);
+      activeDatePopup = { popup, taskId };
+
+      // Position below the dates cell, clamped to viewport
+      const popupW = 210;
+      let left = rect.left;
+      let top = rect.bottom + 4;
+      if (left + popupW > window.innerWidth) left = window.innerWidth - popupW - 8;
+      if (top + 140 > window.innerHeight) top = rect.top - 140;
+      popup.style.left = left + 'px';
+      popup.style.top = top + 'px';
+
+      const startInput = popup.querySelector('#dateEditStart');
+      const endInput = popup.querySelector('#dateEditEnd');
+
+      function saveDates() {
+        const s = startInput.value, e = endInput.value;
+        if (!s || !e) return;
+        if (parseLocalDate(s) > parseLocalDate(e)) return;
+        const t = tasks.find(x => x.id === taskId);
+        if (!t) return;
+        if (t.start !== s || t.end !== e) {
+          t.start = s;
+          t.end = e;
+          t.duration = Math.ceil((parseLocalDate(e) - parseLocalDate(s)) / 864e5) + 1;
+          saveTaskToDb(t);
+          render();
+        }
+      }
+
+      startInput.addEventListener('change', saveDates);
+      endInput.addEventListener('change', saveDates);
+
+      // Close when clicking outside
+      setTimeout(() => {
+        document.addEventListener('mousedown', dateEditorOutsideClick);
+      }, 0);
+
+      startInput.focus();
+    }
+
+    function dateEditorOutsideClick(e) {
+      if (activeDatePopup && !activeDatePopup.popup.contains(e.target)) {
+        closeDateEditor();
+      }
+    }
+
+    function closeDateEditor() {
+      if (activeDatePopup) {
+        activeDatePopup.popup.remove();
+        activeDatePopup = null;
+        document.removeEventListener('mousedown', dateEditorOutsideClick);
+      }
     }
 
     // ========== DRAG-TO-REORDER ==========
