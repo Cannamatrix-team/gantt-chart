@@ -224,22 +224,23 @@
 
     .drag-floating-ghost {
       position: fixed; pointer-events: none; z-index: 5000;
-      display: grid; grid-template-columns: 30px 60px 1fr;
-      align-items: center; gap: 0; padding: 0 10px; height: 36px;
       background: white; border: 1px solid #c0c8d4; border-radius: 6px;
       box-shadow: 0 6px 20px rgba(0,0,0,0.18), 0 1px 4px rgba(0,0,0,0.1);
       font-size: 13px; color: #333; opacity: 0.92;
-      max-width: 340px; transform: translate(8px, -50%);
+      max-width: 360px; min-width: 180px; transform: translate(8px, -18px);
+      overflow: hidden;
     }
-    .drag-floating-ghost .ghost-row-wbs {
-      font-family: 'SF Mono', Monaco, monospace; font-size: 11px; color: #888;
+    .ghost-row {
+      display: grid; grid-template-columns: 24px 50px 1fr;
+      align-items: center; padding: 0 10px; height: 32px;
     }
-    .drag-floating-ghost .ghost-row-name {
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500;
-    }
-    .drag-floating-ghost .ghost-row-icon {
-      color: #aaa; font-size: 14px; text-align: center;
-    }
+    .ghost-row-icon { color: #aaa; font-size: 14px; text-align: center; }
+    .ghost-row-wbs { font-family: 'SF Mono', Monaco, monospace; font-size: 11px; color: #888; }
+    .ghost-row-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 500; }
+    .ghost-child { height: 26px; border-top: 1px solid #f0f0f0; }
+    .ghost-child .ghost-row-name { font-weight: 400; color: #666; font-size: 12px; }
+    .ghost-child .ghost-row-wbs { font-size: 10px; }
+    .ghost-more { padding: 4px 10px; font-size: 11px; color: #999; border-top: 1px solid #f0f0f0; text-align: center; }
 
     .drop-indicator-line {
       position: absolute; height: 2px; background: #1a73e8;
@@ -253,6 +254,12 @@
     .drop-indicator-line::after {
       content: ''; position: absolute; right: -4px; top: -4px;
       width: 10px; height: 10px; border-radius: 50%; background: #1a73e8;
+    }
+    .drop-level-label {
+      position: absolute; left: -2px; top: -22px;
+      background: #1a73e8; color: white; font-size: 10px; font-weight: 600;
+      padding: 2px 7px; border-radius: 4px; white-space: nowrap;
+      pointer-events: none; letter-spacing: 0.3px;
     }
 
     .task-row.drop-target-above { box-shadow: inset 0 2px 0 0 #1a73e8; }
@@ -1517,13 +1524,48 @@
 
       const taskList = document.getElementById('taskList');
 
-      // Create floating ghost — mini row that follows cursor
+      // Create floating ghost — shows parent + visible children
       dragFloatingGhost = document.createElement('div');
       dragFloatingGhost.className = 'drag-floating-ghost';
-      dragFloatingGhost.innerHTML = `
+
+      // Build parent row
+      let ghostHTML = `<div class="ghost-row">
         <span class="ghost-row-icon">\u2807</span>
         <span class="ghost-row-wbs">${draggedTask.wbs}</span>
-        <span class="ghost-row-name">${draggedTask.name}</span>`;
+        <span class="ghost-row-name">${draggedTask.name}</span>
+      </div>`;
+
+      // If parent is expanded, add visible children to ghost
+      if (!draggedTask.collapsed) {
+        const childTasks = tasks.filter(t =>
+          t.id !== draggedTask.id && String(t.wbs).startsWith(draggedWbs + '.')
+        );
+        // Respect collapse — only show tasks whose ancestors (within this subtree) are expanded
+        const collapsedWbs = new Set(childTasks.filter(t => t.collapsed).map(t => String(t.wbs)));
+        const visibleChildren = childTasks.filter(child => {
+          const parts = String(child.wbs).split('.');
+          for (let i = 1; i < parts.length; i++) {
+            const ancestor = parts.slice(0, i).join('.');
+            if (ancestor !== draggedWbs && collapsedWbs.has(ancestor)) return false;
+          }
+          return true;
+        });
+
+        const MAX_GHOST_CHILDREN = 4;
+        const shown = visibleChildren.slice(0, MAX_GHOST_CHILDREN);
+        shown.forEach(child => {
+          ghostHTML += `<div class="ghost-row ghost-child">
+            <span class="ghost-row-icon"></span>
+            <span class="ghost-row-wbs">${child.wbs}</span>
+            <span class="ghost-row-name">${child.name}</span>
+          </div>`;
+        });
+        if (visibleChildren.length > MAX_GHOST_CHILDREN) {
+          ghostHTML += `<div class="ghost-more">+${visibleChildren.length - MAX_GHOST_CHILDREN} more</div>`;
+        }
+      }
+
+      dragFloatingGhost.innerHTML = ghostHTML;
       document.body.appendChild(dragFloatingGhost);
       dragFloatingGhost.style.left = e.clientX + 'px';
       dragFloatingGhost.style.top = e.clientY + 'px';
@@ -1602,8 +1644,14 @@
           lineTop = 0;
         }
 
-        // Indent the left edge to show the hierarchy level
-        const indent = 120 + (targetLevel - 1) * INDENT_PX;
+        // Indent the left edge to show the hierarchy level — exaggerated for clarity
+        const baseIndent = 8 + columnWidths.handle + columnWidths.expand + columnWidths.wbs;
+        const indent = baseIndent + (targetLevel - 1) * 30;
+
+        // Level context label
+        const levelLabels = ['Top level', '↳ Child', '↳↳ Grandchild', '↳↳↳ Level 4'];
+        const label = levelLabels[Math.min(targetLevel - 1, levelLabels.length - 1)] || `Level ${targetLevel}`;
+        dragIndicatorLine.innerHTML = `<span class="drop-level-label">${label}</span>`;
 
         dragIndicatorLine.style.display = 'block';
         dragIndicatorLine.style.top = lineTop + 'px';
