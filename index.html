@@ -531,8 +531,7 @@
           tasks = Object.keys(data).map(key => ({ id: key, ...data[key] }));
           tasks.sort((a, b) => String(a.wbs).localeCompare(String(b.wbs), undefined, { numeric: true }));
         } else {
-          loadSampleData();
-          tasks.forEach(t => { const { id, ...d } = t; tasksRef.child(id).set(d); });
+          tasks = [];
         }
         document.getElementById('loadingOverlay').classList.add('hidden');
         populateTeamDropdown();
