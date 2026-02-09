@@ -48,22 +48,24 @@
     .main-container { display: flex; margin-top: 56px; height: calc(100vh - 56px); }
     
     .task-panel {
-      width: 400px; min-width: 300px; max-width: 600px; background: white;
+      min-width: 300px; max-width: 900px; background: white;
       border-right: 1px solid #e0e0e0; display: flex; flex-direction: column; overflow: hidden; flex-shrink: 0;
+      --col-handle: 30px; --col-expand: 30px; --col-wbs: 60px; --col-name: 200px; --col-assigned: 80px; --col-dates: 90px;
     }
-    .sidebar-resize-handle {
-      width: 5px; cursor: col-resize; background: transparent; flex-shrink: 0;
-      transition: background 0.15s; position: relative; z-index: 10;
-    }
-    .sidebar-resize-handle:hover, .sidebar-resize-handle.active { background: #1a73e8; }
     .task-header {
-      display: grid; grid-template-columns: 30px 30px 60px 1fr 70px 80px;
+      display: grid; grid-template-columns: var(--col-handle) var(--col-expand) var(--col-wbs) var(--col-name) var(--col-assigned) var(--col-dates);
       padding: 10px 8px; background: #f8f9fa; border-bottom: 2px solid #e0e0e0;
       font-weight: 600; font-size: 11px; color: #5f6368; text-transform: uppercase; letter-spacing: 0.5px;
     }
+    .task-header-cell { position: relative; overflow: visible; }
+    .col-resize-handle {
+      position: absolute; right: -3px; top: -10px; bottom: -10px; width: 7px;
+      cursor: col-resize; z-index: 10; background: transparent;
+    }
+    .col-resize-handle:hover, .col-resize-handle.active { background: rgba(26, 115, 232, 0.4); }
     .task-list { flex: 1; overflow-y: auto; overflow-x: hidden; position: relative; }
     .task-row {
-      display: grid; grid-template-columns: 30px 30px 60px 1fr 70px 80px;
+      display: grid; grid-template-columns: var(--col-handle) var(--col-expand) var(--col-wbs) var(--col-name) var(--col-assigned) var(--col-dates);
       padding: 8px; border-bottom: 1px solid #f0f0f0; align-items: center; font-size: 13px; cursor: pointer; transition: background 0.15s;
       position: relative;
     }
@@ -261,7 +263,7 @@
     }
 
     .quick-add-row {
-      display: grid; grid-template-columns: 30px 30px 60px 1fr 70px 80px;
+      display: grid; grid-template-columns: var(--col-handle) var(--col-expand) var(--col-wbs) var(--col-name) var(--col-assigned) var(--col-dates);
       padding: 8px; border-bottom: 1px solid #f0f0f0; align-items: center; font-size: 13px;
     }
     .quick-add-input {
@@ -346,10 +348,9 @@
   
   <div class="main-container">
     <div class="task-panel" id="taskPanel">
-      <div class="task-header"><span></span><span></span><span>WBS</span><span>Task Name</span><span>Assigned</span><span>Dates</span></div>
+      <div class="task-header"><span></span><span></span><span class="task-header-cell">WBS<div class="col-resize-handle" data-col="wbs"></div></span><span class="task-header-cell">Task Name<div class="col-resize-handle" data-col="name"></div></span><span class="task-header-cell">Assigned<div class="col-resize-handle" data-col="assigned"></div></span><span class="task-header-cell">Dates<div class="col-resize-handle" data-col="dates"></div></span></div>
       <div class="task-list" id="taskList"></div>
     </div>
-    <div class="sidebar-resize-handle" id="sidebarResizeHandle"></div>
     <div class="gantt-panel">
       <div class="gantt-header" id="ganttHeader">
         <div class="gantt-months" id="ganttMonths"></div>
@@ -454,6 +455,8 @@
     let dragStartDate = null, dragEndDate = null, dragOriginalStart = null, dragOriginalEnd = null;
     let dependencyStartTask = null;
     const userColors = ['#4285f4', '#34a853', '#fbbc04', '#ea4335', '#9c27b0', '#00bcd4', '#ff5722', '#795548'];
+    let columnWidths = { handle: 30, expand: 30, wbs: 60, name: 200, assigned: 80, dates: 90 };
+    const COL_MIN_WIDTHS = { wbs: 40, name: 100, assigned: 40, dates: 50 };
 
     const BAR_COLOR_PRESETS = {
       blue:   { gradient: 'linear-gradient(135deg, #1a73e8 0%, #1557b0 100%)' },
@@ -770,27 +773,48 @@
     }
 
     // ========== DRAG & DROP ==========
-    function setupSidebarResize() {
-      const handle = document.getElementById('sidebarResizeHandle');
+    function applyColumnWidths() {
       const panel = document.getElementById('taskPanel');
-      let isResizing = false, startX = 0, startWidth = 0;
-      handle.addEventListener('mousedown', (e) => {
-        e.preventDefault(); isResizing = true; startX = e.clientX; startWidth = panel.offsetWidth;
-        handle.classList.add('active'); document.body.style.cursor = 'col-resize'; document.body.style.userSelect = 'none';
+      panel.style.setProperty('--col-wbs', columnWidths.wbs + 'px');
+      panel.style.setProperty('--col-name', columnWidths.name + 'px');
+      panel.style.setProperty('--col-assigned', columnWidths.assigned + 'px');
+      panel.style.setProperty('--col-dates', columnWidths.dates + 'px');
+      const total = Object.values(columnWidths).reduce((s, w) => s + w, 0) + 16;
+      panel.style.width = total + 'px';
+    }
+
+    function setupColumnResize() {
+      let colResizing = null;
+      document.addEventListener('mousedown', (e) => {
+        const handle = e.target.closest('.col-resize-handle');
+        if (!handle) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const col = handle.dataset.col;
+        colResizing = { col, startX: e.clientX, startWidth: columnWidths[col] };
+        handle.classList.add('active');
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
       });
       document.addEventListener('mousemove', (e) => {
-        if (!isResizing) return;
-        const newWidth = Math.min(600, Math.max(300, startWidth + (e.clientX - startX)));
-        panel.style.width = newWidth + 'px';
+        if (!colResizing) return;
+        const delta = e.clientX - colResizing.startX;
+        const min = COL_MIN_WIDTHS[colResizing.col] || 30;
+        columnWidths[colResizing.col] = Math.max(min, colResizing.startWidth + delta);
+        applyColumnWidths();
       });
       document.addEventListener('mouseup', () => {
-        if (!isResizing) return;
-        isResizing = false; handle.classList.remove('active'); document.body.style.cursor = ''; document.body.style.userSelect = '';
+        if (!colResizing) return;
+        document.querySelectorAll('.col-resize-handle.active').forEach(h => h.classList.remove('active'));
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+        colResizing = null;
       });
     }
 
     function setupEventListeners() {
-      setupSidebarResize();
+      setupColumnResize();
+      applyColumnWidths();
       document.addEventListener('click', () => document.getElementById('contextMenu').classList.remove('visible'));
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
