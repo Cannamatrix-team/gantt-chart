@@ -52,14 +52,15 @@
       border-right: 1px solid #e0e0e0; display: flex; flex-direction: column; overflow: hidden;
     }
     .task-header {
-      display: grid; grid-template-columns: 30px 60px 1fr 70px 80px;
+      display: grid; grid-template-columns: 30px 30px 60px 1fr 70px 80px;
       padding: 10px 8px; background: #f8f9fa; border-bottom: 2px solid #e0e0e0;
       font-weight: 600; font-size: 11px; color: #5f6368; text-transform: uppercase; letter-spacing: 0.5px;
     }
     .task-list { flex: 1; overflow-y: auto; overflow-x: hidden; }
     .task-row {
-      display: grid; grid-template-columns: 30px 60px 1fr 70px 80px;
+      display: grid; grid-template-columns: 30px 30px 60px 1fr 70px 80px;
       padding: 8px; border-bottom: 1px solid #f0f0f0; align-items: center; font-size: 13px; cursor: pointer; transition: background 0.15s;
+      position: relative;
     }
     .task-row:hover { background: #f8f9fa; }
     .task-row.selected { background: #e8f0fe; }
@@ -191,6 +192,48 @@
     .team-add-row button { padding: 8px 16px; background: #1a73e8; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
     .team-add-row button:hover { background: #1557b0; }
 
+    .task-row-actions {
+      position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+      display: none; align-items: center; gap: 2px; background: white;
+      border: 1px solid #e0e0e0; border-radius: 6px; padding: 2px 4px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1); z-index: 10;
+    }
+    .task-row:hover .task-row-actions { display: flex; }
+    .task-action-btn {
+      width: 24px; height: 24px; border: none; background: none; border-radius: 4px;
+      cursor: pointer; font-size: 13px; color: #555; display: flex; align-items: center;
+      justify-content: center; transition: all 0.15s; padding: 0;
+    }
+    .task-action-btn:hover { background: #e8f0fe; color: #1a73e8; }
+    .task-action-btn.danger:hover { background: #fce8e6; color: #ea4335; }
+
+    .drag-handle {
+      display: none; align-items: center; justify-content: center;
+      cursor: grab; color: #aaa; font-size: 14px; user-select: none; width: 100%; height: 100%;
+    }
+    .task-row:hover .drag-handle { display: flex; }
+    .task-row.dragging { opacity: 0.4; background: #e8f0fe; }
+    .drop-indicator {
+      position: absolute; left: 0; right: 0; height: 3px; background: #1a73e8;
+      z-index: 20; pointer-events: none; border-radius: 2px; display: none;
+    }
+
+    .inline-edit-input {
+      width: 100%; padding: 2px 6px; border: 2px solid #1a73e8; border-radius: 4px;
+      font-size: 13px; font-family: inherit; outline: none; background: white;
+    }
+
+    .quick-add-row {
+      display: grid; grid-template-columns: 30px 30px 60px 1fr 70px 80px;
+      padding: 8px; border-bottom: 1px solid #f0f0f0; align-items: center; font-size: 13px;
+    }
+    .quick-add-input {
+      width: 100%; padding: 6px 10px; border: 1px dashed #ccc; border-radius: 4px;
+      font-size: 13px; font-family: inherit; outline: none; color: #333; background: transparent;
+    }
+    .quick-add-input:focus { border: 1px solid #1a73e8; border-style: solid; }
+    .quick-add-input::placeholder { color: #aaa; }
+
     ::-webkit-scrollbar { width: 10px; height: 10px; }
     ::-webkit-scrollbar-track { background: #f0f0f0; }
     ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 5px; }
@@ -241,7 +284,7 @@
   
   <div class="main-container">
     <div class="task-panel">
-      <div class="task-header"><span></span><span>WBS</span><span>Task Name</span><span>Assigned</span><span>Dates</span></div>
+      <div class="task-header"><span></span><span></span><span>WBS</span><span>Task Name</span><span>Assigned</span><span>Dates</span></div>
       <div class="task-list" id="taskList"></div>
     </div>
     <div class="gantt-panel">
@@ -493,22 +536,45 @@
     function renderTaskList() {
       const c = document.getElementById('taskList');
       c.innerHTML = '';
+      // Remove old drop indicator
+      const oldIndicator = document.querySelector('.drop-indicator');
+      if (oldIndicator) oldIndicator.remove();
+
       getVisibleTasks().forEach(task => {
         const hasChildren = tasks.some(t => t.wbs !== task.wbs && String(t.wbs).startsWith(task.wbs + '.'));
         const row = document.createElement('div');
         row.className = `task-row level-${task.level}${task.id === selectedTaskId ? ' selected' : ''}`;
         row.dataset.taskId = task.id;
         row.innerHTML = `
+          <span class="drag-handle" onmousedown="startTaskListDrag(event, '${task.id}')">⠿</span>
           <button class="expand-btn ${task.collapsed ? 'collapsed' : ''} ${!hasChildren ? 'no-children' : ''}" onclick="toggleCollapse('${task.id}', event)">${task.collapsed ? '▶' : '▼'}</button>
           <span class="task-wbs">${task.wbs}</span>
-          <span class="task-name" style="padding-left:${(task.level - 1) * 12}px" title="${task.name}">${task.name}</span>
+          <span class="task-name" data-task-id="${task.id}" style="padding-left:${(task.level - 1) * 12}px" title="${task.name}">${task.name}</span>
           <span class="task-assigned">${task.assigned || '-'}</span>
-          <span class="task-dates">${fmtDateShort(task.start)}-${fmtDateShort(task.end)}</span>`;
-        row.addEventListener('click', (e) => { if (!e.target.classList.contains('expand-btn')) selectTask(task.id); });
-        row.addEventListener('dblclick', () => showEditTaskModal(task.id));
+          <span class="task-dates">${fmtDateShort(task.start)}-${fmtDateShort(task.end)}</span>
+          <div class="task-row-actions">
+            <button class="task-action-btn" onclick="event.stopPropagation();outdentTask('${task.id}')" title="Outdent">←</button>
+            <button class="task-action-btn" onclick="event.stopPropagation();indentTask('${task.id}')" title="Indent">→</button>
+            <button class="task-action-btn" onclick="event.stopPropagation();addSiblingTask('${task.id}')" title="Add sibling">+</button>
+            <button class="task-action-btn" onclick="event.stopPropagation();quickAddSubtask('${task.id}')" title="Add subtask">↳</button>
+            <button class="task-action-btn danger" onclick="event.stopPropagation();quickDeleteTask('${task.id}')" title="Delete">×</button>
+          </div>`;
+        row.addEventListener('click', (e) => {
+          if (e.target.classList.contains('expand-btn') || e.target.classList.contains('task-action-btn') || e.target.classList.contains('drag-handle')) return;
+          if (e.target.classList.contains('task-name') || e.target.closest('.task-name')) {
+            startInlineEdit(task.id); return;
+          }
+          selectTask(task.id);
+        });
+        row.addEventListener('dblclick', (e) => {
+          if (e.target.classList.contains('task-name') || e.target.closest('.task-name')) {
+            e.preventDefault(); showEditTaskModal(task.id);
+          }
+        });
         row.addEventListener('contextmenu', (e) => showContextMenu(e, task.id));
         c.appendChild(row);
       });
+      renderQuickAddRow(c);
     }
 
     function renderGanttHeader() {
@@ -623,7 +689,7 @@
       document.addEventListener('click', () => document.getElementById('contextMenu').classList.remove('visible'));
       document.addEventListener('mousemove', handleMouseMove);
       document.addEventListener('mouseup', handleMouseUp);
-      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeTaskModal(); closeTeamModal(); document.getElementById('contextMenu').classList.remove('visible'); cancelDepDrag(); } });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closeTaskModal(); closeTeamModal(); document.getElementById('contextMenu').classList.remove('visible'); cancelDepDrag(); cancelInlineEdit(); } });
       const tl = document.getElementById('taskList'), gc = document.getElementById('ganttBodyContainer');
       tl.addEventListener('scroll', () => gc.scrollTop = tl.scrollTop);
       gc.addEventListener('scroll', () => tl.scrollTop = gc.scrollTop);
@@ -924,6 +990,464 @@
     function fmtDate(d) { if (!(d instanceof Date)) return d; const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0'); return `${y}-${m}-${day}`; }
     function fmtDateShort(d) { const dt = new Date(d); return (dt.getMonth() + 1) + '/' + dt.getDate(); }
     function toast(msg, type = 'success') { const c = document.getElementById('toastContainer'), t = document.createElement('div'); t.className = `toast ${type}`; t.textContent = msg; c.appendChild(t); setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3000); }
+
+    // ========== RECALCULATE WBS ==========
+    function recalculateWBS() {
+      // Build tree from flat tasks list based on current ordering
+      const oldWbsMap = {}; // id -> old wbs
+      tasks.forEach(t => oldWbsMap[t.id] = String(t.wbs));
+
+      // Build parent-children tree
+      function buildTree(taskList) {
+        const roots = [];
+        const childrenMap = {};
+        taskList.forEach(t => {
+          const parts = String(t.wbs).split('.');
+          if (parts.length === 1) {
+            roots.push(t);
+          } else {
+            const parentWbs = parts.slice(0, -1).join('.');
+            if (!childrenMap[parentWbs]) childrenMap[parentWbs] = [];
+            childrenMap[parentWbs].push(t);
+          }
+        });
+        return { roots, childrenMap };
+      }
+
+      const { roots, childrenMap } = buildTree(tasks);
+
+      function assignWbs(node, prefix) {
+        node.wbs = prefix;
+        node.level = prefix.split('.').length;
+        const children = childrenMap[oldWbsMap[node.id]] || [];
+        children.forEach((child, i) => {
+          assignWbs(child, prefix + '.' + (i + 1));
+        });
+      }
+
+      roots.forEach((root, i) => assignWbs(root, String(i + 1)));
+
+      // Build old->new WBS mapping for dependency updates
+      const wbsRemap = {};
+      tasks.forEach(t => {
+        const oldW = oldWbsMap[t.id];
+        if (oldW !== String(t.wbs)) wbsRemap[oldW] = String(t.wbs);
+      });
+
+      // Update dependencies
+      if (Object.keys(wbsRemap).length > 0) {
+        tasks.forEach(t => {
+          if (t.dependencies && t.dependencies.length) {
+            t.dependencies = t.dependencies.map(d => wbsRemap[d] || d);
+          }
+        });
+      }
+
+      // Re-sort
+      tasks.sort((a, b) => String(a.wbs).localeCompare(String(b.wbs), undefined, { numeric: true }));
+
+      // Save all to Firebase
+      tasks.forEach(t => saveTaskToDb(t));
+    }
+
+    // ========== INDENT / OUTDENT ==========
+    function indentTask(id) {
+      const visible = getVisibleTasks();
+      const idx = visible.findIndex(t => t.id === id);
+      if (idx <= 0) { toast('Cannot indent: no task above', 'error'); return; }
+
+      const task = visible[idx];
+      const above = visible[idx - 1];
+
+      // Find all children of this task
+      const taskWbs = String(task.wbs);
+      const children = tasks.filter(t => t.id !== task.id && String(t.wbs).startsWith(taskWbs + '.'));
+
+      // Calculate new WBS under the above task
+      const aboveWbs = String(above.wbs);
+      const existingChildren = tasks.filter(t =>
+        String(t.wbs).startsWith(aboveWbs + '.') &&
+        String(t.wbs).split('.').length === aboveWbs.split('.').length + 1
+      );
+      const maxNum = existingChildren.reduce((max, t) => {
+        const parts = String(t.wbs).split('.');
+        return Math.max(max, parseInt(parts[parts.length - 1]) || 0);
+      }, 0);
+
+      const newWbs = aboveWbs + '.' + (maxNum + 1);
+      const oldWbs = taskWbs;
+
+      // Update task WBS
+      task.wbs = newWbs;
+      task.level = newWbs.split('.').length;
+
+      // Update children WBS
+      children.forEach(c => {
+        c.wbs = newWbs + String(c.wbs).substring(oldWbs.length);
+        c.level = String(c.wbs).split('.').length;
+      });
+
+      // Expand the new parent
+      above.collapsed = false;
+
+      // Recalculate to fix sibling numbering
+      tasks.sort((a, b) => String(a.wbs).localeCompare(String(b.wbs), undefined, { numeric: true }));
+      recalculateWBS();
+      render();
+      toast('Task indented');
+    }
+
+    function outdentTask(id) {
+      const task = tasks.find(t => t.id === id);
+      if (!task) return;
+      const parts = String(task.wbs).split('.');
+      if (parts.length <= 1) { toast('Cannot outdent: already top-level', 'error'); return; }
+
+      const taskWbs = String(task.wbs);
+      const parentWbs = parts.slice(0, -1).join('.');
+      const grandparentWbs = parts.slice(0, -2).join('.');
+
+      // Find children of this task
+      const children = tasks.filter(t => t.id !== task.id && String(t.wbs).startsWith(taskWbs + '.'));
+
+      // Calculate new WBS as sibling of parent
+      let newWbs;
+      if (grandparentWbs) {
+        const parentSiblings = tasks.filter(t =>
+          String(t.wbs).startsWith(grandparentWbs + '.') &&
+          String(t.wbs).split('.').length === grandparentWbs.split('.').length + 1
+        );
+        const maxNum = parentSiblings.reduce((max, t) => {
+          const p = String(t.wbs).split('.');
+          return Math.max(max, parseInt(p[p.length - 1]) || 0);
+        }, 0);
+        newWbs = grandparentWbs + '.' + (maxNum + 1);
+      } else {
+        const topLevel = tasks.filter(t => String(t.wbs).split('.').length === 1);
+        const maxNum = topLevel.reduce((max, t) => Math.max(max, parseInt(t.wbs) || 0), 0);
+        newWbs = String(maxNum + 1);
+      }
+
+      const oldWbs = taskWbs;
+
+      // Update task
+      task.wbs = newWbs;
+      task.level = newWbs.split('.').length;
+
+      // Update children
+      children.forEach(c => {
+        c.wbs = newWbs + String(c.wbs).substring(oldWbs.length);
+        c.level = String(c.wbs).split('.').length;
+      });
+
+      tasks.sort((a, b) => String(a.wbs).localeCompare(String(b.wbs), undefined, { numeric: true }));
+      recalculateWBS();
+      render();
+      toast('Task outdented');
+    }
+
+    // ========== QUICK ADD / DELETE ==========
+    function addSiblingTask(id) {
+      const task = tasks.find(t => t.id === id);
+      if (!task) return;
+      const parts = String(task.wbs).split('.');
+      const parentWbs = parts.slice(0, -1).join('.');
+      const siblings = parentWbs
+        ? tasks.filter(t => String(t.wbs).startsWith(parentWbs + '.') && String(t.wbs).split('.').length === parts.length)
+        : tasks.filter(t => String(t.wbs).split('.').length === 1);
+      const maxNum = siblings.reduce((max, t) => {
+        const p = String(t.wbs).split('.');
+        return Math.max(max, parseInt(p[p.length - 1]) || 0);
+      }, 0);
+      const newWbs = parentWbs ? parentWbs + '.' + (maxNum + 1) : String(maxNum + 1);
+      const today = fmtDate(new Date());
+      const newTask = {
+        id: 'task_' + Date.now(), wbs: newWbs, name: 'New Task', level: newWbs.split('.').length,
+        assigned: '', start: today, end: today, duration: 1, progress: 0,
+        dependencies: [], autoRollup: newWbs.split('.').length === 1, collapsed: false
+      };
+      tasks.push(newTask);
+      tasks.sort((a, b) => String(a.wbs).localeCompare(String(b.wbs), undefined, { numeric: true }));
+      saveTaskToDb(newTask);
+      render();
+      // Start inline edit on the new task
+      setTimeout(() => startInlineEdit(newTask.id), 50);
+      toast('Sibling task added');
+    }
+
+    function quickAddSubtask(id) {
+      const parent = tasks.find(t => t.id === id);
+      if (!parent) return;
+      const parentWbs = String(parent.wbs);
+      const existing = tasks.filter(t =>
+        String(t.wbs).startsWith(parentWbs + '.') &&
+        String(t.wbs).split('.').length === parentWbs.split('.').length + 1
+      );
+      const maxNum = existing.reduce((max, t) => {
+        const p = String(t.wbs).split('.');
+        return Math.max(max, parseInt(p[p.length - 1]) || 0);
+      }, 0);
+      const newWbs = parentWbs + '.' + (maxNum + 1);
+      const newTask = {
+        id: 'task_' + Date.now(), wbs: newWbs, name: 'New Subtask', level: newWbs.split('.').length,
+        assigned: '', start: parent.start, end: parent.end, duration: parent.duration || 1, progress: 0,
+        dependencies: [], autoRollup: false, collapsed: false
+      };
+      parent.collapsed = false;
+      saveTaskToDb(parent);
+      tasks.push(newTask);
+      tasks.sort((a, b) => String(a.wbs).localeCompare(String(b.wbs), undefined, { numeric: true }));
+      saveTaskToDb(newTask);
+      render();
+      setTimeout(() => startInlineEdit(newTask.id), 50);
+      toast('Subtask added');
+    }
+
+    function quickDeleteTask(id) {
+      const t = tasks.find(x => x.id === id);
+      if (!t || !confirm(`Delete "${t.name}"?`)) return;
+      const toDelete = tasks.filter(x => x.wbs === t.wbs || String(x.wbs).startsWith(t.wbs + '.'));
+      tasks = tasks.filter(x => x.wbs !== t.wbs && !String(x.wbs).startsWith(t.wbs + '.'));
+      tasks.forEach(x => {
+        if (x.dependencies) x.dependencies = x.dependencies.filter(d => d !== t.wbs && !String(d).startsWith(t.wbs + '.'));
+      });
+      toDelete.forEach(x => { if (tasksRef) tasksRef.child(x.id).remove(); });
+      recalculateWBS();
+      selectedTaskId = null;
+      render();
+      toast('Task deleted');
+    }
+
+    // ========== INLINE EDITING ==========
+    let inlineEditId = null;
+    let inlineClickTimer = null;
+
+    function startInlineEdit(id) {
+      if (inlineEditId === id) return; // already editing this one
+      cancelInlineEdit();
+      inlineEditId = id;
+      const task = tasks.find(t => t.id === id);
+      if (!task) return;
+      const nameSpan = document.querySelector(`.task-name[data-task-id="${id}"]`);
+      if (!nameSpan) return;
+      const paddingLeft = nameSpan.style.paddingLeft || '0px';
+      nameSpan.innerHTML = `<input class="inline-edit-input" value="${task.name.replace(/"/g, '&quot;')}" style="margin-left:0" data-task-id="${id}">`;
+      const input = nameSpan.querySelector('input');
+      input.focus();
+      input.select();
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); saveInlineEdit(id); }
+        if (e.key === 'Escape') { e.preventDefault(); cancelInlineEdit(); }
+      });
+      input.addEventListener('blur', () => {
+        // Small delay to allow Escape to fire first
+        setTimeout(() => { if (inlineEditId === id) saveInlineEdit(id); }, 100);
+      });
+      input.addEventListener('click', (e) => e.stopPropagation());
+      input.addEventListener('dblclick', (e) => e.stopPropagation());
+    }
+
+    function saveInlineEdit(id) {
+      if (inlineEditId !== id) return;
+      const input = document.querySelector(`.inline-edit-input[data-task-id="${id}"]`);
+      if (!input) { inlineEditId = null; return; }
+      const newName = input.value.trim();
+      if (!newName) { cancelInlineEdit(); return; }
+      const task = tasks.find(t => t.id === id);
+      if (task && task.name !== newName) {
+        task.name = newName;
+        saveTaskToDb(task);
+      }
+      inlineEditId = null;
+      render();
+    }
+
+    function cancelInlineEdit() {
+      if (!inlineEditId) return;
+      const id = inlineEditId;
+      inlineEditId = null;
+      render();
+    }
+
+    // ========== DRAG-TO-REORDER ==========
+    let isTaskListDragging = false;
+    let draggedTaskId = null;
+    let dragGhost = null;
+    let dropIndicator = null;
+    let dropTargetInfo = null;
+
+    function startTaskListDrag(e, id) {
+      if (e.button !== 0) return;
+      e.preventDefault();
+      e.stopPropagation();
+      isTaskListDragging = true;
+      draggedTaskId = id;
+
+      const row = document.querySelector(`.task-row[data-task-id="${id}"]`);
+      if (!row) return;
+      row.classList.add('dragging');
+
+      // Create drop indicator
+      dropIndicator = document.createElement('div');
+      dropIndicator.className = 'drop-indicator';
+      document.getElementById('taskList').appendChild(dropIndicator);
+
+      document.addEventListener('mousemove', handleTaskListDragMove);
+      document.addEventListener('mouseup', handleTaskListDragEnd);
+    }
+
+    function handleTaskListDragMove(e) {
+      if (!isTaskListDragging) return;
+      const taskList = document.getElementById('taskList');
+      const rows = Array.from(taskList.querySelectorAll('.task-row'));
+      if (!rows.length) return;
+
+      let closestRow = null;
+      let closestDist = Infinity;
+      let insertAfter = true;
+
+      rows.forEach(row => {
+        if (row.dataset.taskId === draggedTaskId) return;
+        const rect = row.getBoundingClientRect();
+        const midY = rect.top + rect.height / 2;
+        const dist = Math.abs(e.clientY - midY);
+        if (dist < closestDist) {
+          closestDist = dist;
+          closestRow = row;
+          insertAfter = e.clientY > midY;
+        }
+      });
+
+      if (closestRow && dropIndicator) {
+        const rect = closestRow.getBoundingClientRect();
+        const listRect = taskList.getBoundingClientRect();
+        dropIndicator.style.display = 'block';
+        if (insertAfter) {
+          dropIndicator.style.top = (rect.bottom - listRect.top + taskList.scrollTop - 1) + 'px';
+        } else {
+          dropIndicator.style.top = (rect.top - listRect.top + taskList.scrollTop - 1) + 'px';
+        }
+        dropTargetInfo = { targetId: closestRow.dataset.taskId, insertAfter };
+      }
+    }
+
+    function handleTaskListDragEnd(e) {
+      if (!isTaskListDragging) return;
+      document.removeEventListener('mousemove', handleTaskListDragMove);
+      document.removeEventListener('mouseup', handleTaskListDragEnd);
+
+      const row = document.querySelector(`.task-row[data-task-id="${draggedTaskId}"]`);
+      if (row) row.classList.remove('dragging');
+      if (dropIndicator) { dropIndicator.remove(); dropIndicator = null; }
+
+      if (dropTargetInfo && draggedTaskId) {
+        const draggedTask = tasks.find(t => t.id === draggedTaskId);
+        const targetTask = tasks.find(t => t.id === dropTargetInfo.targetId);
+        if (draggedTask && targetTask && draggedTask.id !== targetTask.id) {
+          const draggedWbs = String(draggedTask.wbs);
+          // Collect dragged task + children
+          const movedTasks = tasks.filter(t => t.id === draggedTask.id || String(t.wbs).startsWith(draggedWbs + '.'));
+          const movedIds = new Set(movedTasks.map(t => t.id));
+          // Remove from array
+          const remaining = tasks.filter(t => !movedIds.has(t.id));
+
+          // Find target position
+          const targetIdx = remaining.findIndex(t => t.id === targetTask.id);
+          if (targetIdx !== -1) {
+            // If inserting after, also skip target's children
+            let insertIdx;
+            if (dropTargetInfo.insertAfter) {
+              const targetWbs = String(targetTask.wbs);
+              insertIdx = targetIdx + 1;
+              while (insertIdx < remaining.length && String(remaining[insertIdx].wbs).startsWith(targetWbs + '.')) {
+                insertIdx++;
+              }
+            } else {
+              insertIdx = targetIdx;
+            }
+
+            // Adopt same level as target
+            const targetLevel = targetTask.level;
+            const draggedLevel = draggedTask.level;
+            const levelDiff = targetLevel - draggedLevel;
+
+            // Determine new WBS prefix
+            const targetParts = String(targetTask.wbs).split('.');
+            const targetParentWbs = targetParts.slice(0, -1).join('.');
+
+            // Insert into position
+            remaining.splice(insertIdx, 0, ...movedTasks);
+            tasks.length = 0;
+            tasks.push(...remaining);
+
+            // Update levels for moved tasks
+            movedTasks.forEach(t => {
+              t.level = (t.level || 1) + levelDiff;
+              if (t.level < 1) t.level = 1;
+            });
+
+            // Rebuild WBS based on parent/child relationships using level
+            // Walk through tasks in order and assign WBS based on level
+            const counters = [0]; // stack of counters per level
+            tasks.forEach(t => {
+              const level = t.level;
+              // Grow counters stack if needed
+              while (counters.length < level) counters.push(0);
+              // Trim counters stack if level decreased
+              counters.length = level;
+              // Increment current level counter
+              counters[level - 1] = (counters[level - 1] || 0) + 1;
+              t.wbs = counters.join('.');
+            });
+
+            tasks.forEach(t => saveTaskToDb(t));
+          }
+        }
+      }
+
+      isTaskListDragging = false;
+      draggedTaskId = null;
+      dropTargetInfo = null;
+      render();
+    }
+
+    // ========== QUICK ADD ROW ==========
+    function renderQuickAddRow(container) {
+      const row = document.createElement('div');
+      row.className = 'quick-add-row';
+      row.innerHTML = `
+        <span></span><span></span><span></span>
+        <input class="quick-add-input" type="text" placeholder="+ Add task... (press Enter)">
+        <span></span><span></span>`;
+      const input = row.querySelector('.quick-add-input');
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          const name = input.value.trim();
+          if (!name) return;
+          const topLevel = tasks.filter(t => String(t.wbs).split('.').length === 1);
+          const maxNum = topLevel.reduce((max, t) => Math.max(max, parseInt(t.wbs) || 0), 0);
+          const newWbs = String(maxNum + 1);
+          const today = fmtDate(new Date());
+          const newTask = {
+            id: 'task_' + Date.now(), wbs: newWbs, name, level: 1,
+            assigned: '', start: today, end: today, duration: 1, progress: 0,
+            dependencies: [], autoRollup: true, collapsed: false
+          };
+          tasks.push(newTask);
+          tasks.sort((a, b) => String(a.wbs).localeCompare(String(b.wbs), undefined, { numeric: true }));
+          saveTaskToDb(newTask);
+          input.value = '';
+          render();
+          toast('Task added');
+          // Re-focus the quick-add input
+          setTimeout(() => {
+            const newInput = document.querySelector('.quick-add-input');
+            if (newInput) newInput.focus();
+          }, 50);
+        }
+      });
+      container.appendChild(row);
+    }
   </script>
 </body>
 </html>
