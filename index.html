@@ -1068,19 +1068,19 @@
     // ========== AUTO ROLLUP ==========
     function performAutoRollup() {
       if (!tasks.length) return;
-      const maxLvl = Math.max(...tasks.map(t => t.level || 1));
+      // Derive depth from WBS (source of truth), not the level property
+      const maxDepth = Math.max(...tasks.map(t => String(t.wbs).split('.').length));
       const changed = [];
-      for (let lvl = maxLvl - 1; lvl >= 1; lvl--) {
-        tasks.filter(t => (t.level || 1) === lvl).forEach(p => {
-          // Direct children only — one WBS level below this parent
-          const pDepth = String(p.wbs).split('.').length;
+      // Process bottom-up so parents see already-rolled-up children
+      for (let depth = maxDepth - 1; depth >= 1; depth--) {
+        tasks.filter(t => String(t.wbs).split('.').length === depth).forEach(p => {
           const directChildren = tasks.filter(c =>
             String(c.wbs).startsWith(p.wbs + '.') &&
-            String(c.wbs).split('.').length === pDepth + 1
+            String(c.wbs).split('.').length === depth + 1
           );
-          if (!directChildren.length) return; // leaf task, nothing to roll up
-          if (p.autoRollup === false) return; // user explicitly opted out
+          if (!directChildren.length) return; // leaf task, skip
 
+          // Always roll up any task that has children
           const dates = directChildren.filter(c => c.start && c.end)
             .flatMap(c => [parseLocalDate(c.start), parseLocalDate(c.end)]);
           if (!dates.length) return;
