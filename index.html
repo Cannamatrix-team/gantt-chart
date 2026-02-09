@@ -50,10 +50,10 @@
     .task-panel {
       min-width: 300px; max-width: 900px; background: white;
       border-right: 1px solid #e0e0e0; display: flex; flex-direction: column; overflow: hidden; flex-shrink: 0;
-      --col-handle: 30px; --col-expand: 30px; --col-wbs: 60px; --col-name: 200px; --col-assigned: 80px; --col-dates: 90px;
+      --col-handle: 30px; --col-wbs: 60px; --col-name: 230px; --col-assigned: 80px; --col-dates: 90px;
     }
     .task-header {
-      display: grid; grid-template-columns: var(--col-handle) var(--col-expand) var(--col-wbs) var(--col-name) var(--col-assigned) var(--col-dates);
+      display: grid; grid-template-columns: var(--col-handle) var(--col-wbs) var(--col-name) var(--col-assigned) var(--col-dates);
       padding: 10px 8px; background: #f8f9fa; border-bottom: 2px solid #e0e0e0;
       font-weight: 600; font-size: 11px; color: #5f6368; text-transform: uppercase; letter-spacing: 0.5px;
     }
@@ -65,7 +65,7 @@
     .col-resize-handle:hover, .col-resize-handle.active { background: rgba(26, 115, 232, 0.4); }
     .task-list { flex: 1; overflow-y: auto; overflow-x: hidden; position: relative; }
     .task-row {
-      display: grid; grid-template-columns: var(--col-handle) var(--col-expand) var(--col-wbs) var(--col-name) var(--col-assigned) var(--col-dates);
+      display: grid; grid-template-columns: var(--col-handle) var(--col-wbs) var(--col-name) var(--col-assigned) var(--col-dates);
       padding: 8px; border-bottom: 1px solid #f0f0f0; align-items: center; font-size: 13px; cursor: pointer; transition: background 0.15s;
       position: relative;
     }
@@ -79,12 +79,14 @@
     .expand-btn {
       width: 22px; height: 22px; border: none; background: #e8e8e8; border-radius: 4px;
       cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #555; transition: all 0.15s;
+      flex-shrink: 0;
     }
     .expand-btn:hover { background: #d0d0d0; }
     .expand-btn.collapsed { background: #1a73e8; color: white; }
     .expand-btn.no-children { visibility: hidden; }
     .task-wbs { font-family: 'SF Mono', Monaco, monospace; font-size: 11px; color: #666; }
-    .task-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 10px; }
+    .task-name { display: flex; align-items: center; gap: 6px; padding-right: 10px; overflow: hidden; }
+    .task-name-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
     .task-assigned { font-size: 11px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .task-dates { font-size: 10px; color: #888; font-family: 'SF Mono', Monaco, monospace; }
     
@@ -271,7 +273,7 @@
     }
 
     .quick-add-row {
-      display: grid; grid-template-columns: var(--col-handle) var(--col-expand) var(--col-wbs) var(--col-name) var(--col-assigned) var(--col-dates);
+      display: grid; grid-template-columns: var(--col-handle) var(--col-wbs) var(--col-name) var(--col-assigned) var(--col-dates);
       padding: 8px; border-bottom: 1px solid #f0f0f0; align-items: center; font-size: 13px;
     }
     .quick-add-input {
@@ -356,7 +358,7 @@
   
   <div class="main-container">
     <div class="task-panel" id="taskPanel">
-      <div class="task-header"><span></span><span></span><span class="task-header-cell">WBS<div class="col-resize-handle" data-col="wbs"></div></span><span class="task-header-cell">Task Name<div class="col-resize-handle" data-col="name"></div></span><span class="task-header-cell">Assigned<div class="col-resize-handle" data-col="assigned"></div></span><span class="task-header-cell">Dates<div class="col-resize-handle" data-col="dates"></div></span></div>
+      <div class="task-header"><span></span><span class="task-header-cell">WBS<div class="col-resize-handle" data-col="wbs"></div></span><span class="task-header-cell">Task Name<div class="col-resize-handle" data-col="name"></div></span><span class="task-header-cell">Assigned<div class="col-resize-handle" data-col="assigned"></div></span><span class="task-header-cell">Dates<div class="col-resize-handle" data-col="dates"></div></span></div>
       <div class="task-list" id="taskList"></div>
     </div>
     <div class="gantt-panel">
@@ -463,7 +465,7 @@
     let dragStartDate = null, dragEndDate = null, dragOriginalStart = null, dragOriginalEnd = null;
     let dependencyStartTask = null;
     const userColors = ['#4285f4', '#34a853', '#fbbc04', '#ea4335', '#9c27b0', '#00bcd4', '#ff5722', '#795548'];
-    let columnWidths = { handle: 30, expand: 30, wbs: 60, name: 200, assigned: 80, dates: 90 };
+    let columnWidths = { handle: 30, wbs: 60, name: 230, assigned: 80, dates: 90 };
     const COL_MIN_WIDTHS = { wbs: 40, name: 100, assigned: 40, dates: 50 };
 
     const BAR_COLOR_PRESETS = {
@@ -638,9 +640,8 @@
         row.dataset.taskId = task.id;
         row.innerHTML = `
           <span class="drag-handle" onmousedown="startTaskListDrag(event, '${task.id}')">⠿</span>
-          <button class="expand-btn ${task.collapsed ? 'collapsed' : ''} ${!hasChildren ? 'no-children' : ''}" onclick="toggleCollapse('${task.id}', event)">${task.collapsed ? '▶' : '▼'}</button>
           <span class="task-wbs">${task.wbs}</span>
-          <span class="task-name" data-task-id="${task.id}" style="padding-left:${(task.level - 1) * 12}px" title="${task.name}">${task.name}</span>
+          <span class="task-name" data-task-id="${task.id}" style="padding-left:${(task.level - 1) * 12}px"><button class="expand-btn ${task.collapsed ? 'collapsed' : ''} ${!hasChildren ? 'no-children' : ''}" onclick="toggleCollapse('${task.id}', event)">${task.collapsed ? '▶' : '▼'}</button><span class="task-name-text" title="${task.name}">${task.name}</span></span>
           <span class="task-assigned">${task.assigned || '-'}</span>
           <span class="task-dates">${fmtDateShort(task.start)}-${fmtDateShort(task.end)}</span>
           <div class="task-row-actions">
@@ -658,6 +659,7 @@
           selectTask(task.id);
         });
         row.addEventListener('dblclick', (e) => {
+          if (e.target.classList.contains('expand-btn')) return;
           if (e.target.classList.contains('task-name') || e.target.closest('.task-name')) {
             e.preventDefault(); showEditTaskModal(task.id);
           }
@@ -1438,9 +1440,10 @@
       if (!task) return;
       const nameSpan = document.querySelector(`.task-name[data-task-id="${id}"]`);
       if (!nameSpan) return;
-      const paddingLeft = nameSpan.style.paddingLeft || '0px';
-      nameSpan.innerHTML = `<input class="inline-edit-input" value="${task.name.replace(/"/g, '&quot;')}" style="margin-left:0" data-task-id="${id}">`;
-      const input = nameSpan.querySelector('input');
+      const textSpan = nameSpan.querySelector('.task-name-text');
+      if (!textSpan) return;
+      textSpan.innerHTML = `<input class="inline-edit-input" value="${task.name.replace(/"/g, '&quot;')}" style="margin-left:0" data-task-id="${id}">`;
+      const input = textSpan.querySelector('input');
       input.focus();
       input.select();
       input.addEventListener('keydown', (e) => {
@@ -1645,7 +1648,7 @@
         }
 
         // Indent the left edge to show the hierarchy level — exaggerated for clarity
-        const baseIndent = 8 + columnWidths.handle + columnWidths.expand + columnWidths.wbs;
+        const baseIndent = 8 + columnWidths.handle + columnWidths.wbs;
         const indent = baseIndent + (targetLevel - 1) * 30;
 
         // Level context label
@@ -1755,7 +1758,7 @@
       const row = document.createElement('div');
       row.className = 'quick-add-row';
       row.innerHTML = `
-        <span></span><span></span><span></span>
+        <span></span><span></span>
         <input class="quick-add-input" type="text" placeholder="+ Add task... (press Enter)">
         <span></span><span></span>`;
       const input = row.querySelector('.quick-add-input');
