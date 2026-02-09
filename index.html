@@ -952,7 +952,12 @@
       const toDelete = tasks.filter(x => x.wbs === t.wbs || String(x.wbs).startsWith(t.wbs + '.'));
       tasks = tasks.filter(x => x.wbs !== t.wbs && !String(x.wbs).startsWith(t.wbs + '.'));
       tasks.forEach(x => { if (x.dependencies) x.dependencies = x.dependencies.filter(d => d !== t.wbs && !String(d).startsWith(t.wbs + '.')); });
-      toDelete.forEach(x => { if (tasksRef) tasksRef.child(x.id).remove(); });
+      if (tasksRef) {
+        const updates = {};
+        toDelete.forEach(x => { updates[x.id] = null; });
+        tasks.forEach(x => { const { id: tid, ...d } = x; updates[tid] = d; });
+        tasksRef.update(updates);
+      }
       closeTaskModal(); render(); toast('Task deleted');
     }
 
@@ -985,8 +990,12 @@
       const toDelete = tasks.filter(x => x.wbs === t.wbs || String(x.wbs).startsWith(t.wbs + '.'));
       tasks = tasks.filter(x => x.wbs !== t.wbs && !String(x.wbs).startsWith(t.wbs + '.'));
       tasks.forEach(x => { if (x.dependencies) x.dependencies = x.dependencies.filter(d => d !== t.wbs && !String(d).startsWith(t.wbs + '.')); });
-      toDelete.forEach(x => { if (tasksRef) tasksRef.child(x.id).remove(); });
-      tasks.forEach(x => saveTaskToDb(x));
+      if (tasksRef) {
+        const updates = {};
+        toDelete.forEach(x => { updates[x.id] = null; });
+        tasks.forEach(x => { const { id: tid, ...d } = x; updates[tid] = d; });
+        tasksRef.update(updates);
+      }
       selectedTaskId = null; render(); toast('Task deleted');
     }
     function toggleCollapseContext() { if (contextTaskId) { const t = tasks.find(x => x.id === contextTaskId); if (t) { t.collapsed = !t.collapsed; saveTaskToDb(t); render(); } } }
@@ -1014,7 +1023,11 @@
           }
         });
       }
-      tasks.forEach(t => saveTaskToDb(t));
+      if (tasksRef) {
+        const updates = {};
+        tasks.forEach(t => { const { id, ...d } = t; updates[id] = d; });
+        tasksRef.update(updates);
+      }
       render();
       toast(`Dependencies recalculated (${iter} passes)`);
     }
@@ -1147,7 +1160,7 @@
     function toast(msg, type = 'success') { const c = document.getElementById('toastContainer'), t = document.createElement('div'); t.className = `toast ${type}`; t.textContent = msg; c.appendChild(t); setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3000); }
 
     // ========== RECALCULATE WBS ==========
-    function recalculateWBS() {
+    function recalculateWBS(skipSave) {
       // Build tree from flat tasks list based on current ordering
       const oldWbsMap = {}; // id -> old wbs
       tasks.forEach(t => oldWbsMap[t.id] = String(t.wbs));
@@ -1201,8 +1214,12 @@
       // Re-sort
       tasks.sort((a, b) => String(a.wbs).localeCompare(String(b.wbs), undefined, { numeric: true }));
 
-      // Save all to Firebase
-      tasks.forEach(t => saveTaskToDb(t));
+      // Save all to Firebase atomically
+      if (!skipSave && tasksRef) {
+        const updates = {};
+        tasks.forEach(t => { const { id, ...d } = t; updates[id] = d; });
+        tasksRef.update(updates);
+      }
     }
 
     // ========== INDENT / OUTDENT ==========
@@ -1366,8 +1383,13 @@
       tasks.forEach(x => {
         if (x.dependencies) x.dependencies = x.dependencies.filter(d => d !== t.wbs && !String(d).startsWith(t.wbs + '.'));
       });
-      toDelete.forEach(x => { if (tasksRef) tasksRef.child(x.id).remove(); });
-      recalculateWBS();
+      recalculateWBS(true);
+      if (tasksRef) {
+        const updates = {};
+        toDelete.forEach(x => { updates[x.id] = null; });
+        tasks.forEach(x => { const { id: tid, ...d } = x; updates[tid] = d; });
+        tasksRef.update(updates);
+      }
       selectedTaskId = null;
       render();
       toast('Task deleted');
@@ -1615,8 +1637,12 @@
         // Rebuild all WBS numbers from the level structure
         rebuildAllWbs();
 
-        // Persist
-        tasks.forEach(t => saveTaskToDb(t));
+        // Persist atomically
+        if (tasksRef) {
+          const updates = {};
+          tasks.forEach(t => { const { id, ...d } = t; updates[id] = d; });
+          tasksRef.update(updates);
+        }
       }
 
       resetDragState();
