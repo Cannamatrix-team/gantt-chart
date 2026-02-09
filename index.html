@@ -63,7 +63,7 @@
       cursor: col-resize; z-index: 10; background: transparent;
     }
     .col-resize-handle:hover, .col-resize-handle.active { background: rgba(26, 115, 232, 0.4); }
-    .task-list { flex: 1; overflow-y: auto; overflow-x: hidden; position: relative; }
+    .task-list { flex: 1; overflow-y: auto; overflow-x: hidden; position: relative; padding-top: 12px; }
     .task-row {
       display: grid; grid-template-columns: var(--col-handle) var(--col-wbs) var(--col-name) var(--col-assigned) var(--col-dates);
       padding: 8px; border-bottom: 1px solid #f0f0f0; align-items: center; font-size: 13px; cursor: pointer; transition: background 0.15s;
@@ -90,6 +90,8 @@
     .task-assigned { font-size: 11px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .task-dates { font-size: 10px; color: #888; font-family: 'SF Mono', Monaco, monospace; cursor: pointer; border-radius: 3px; padding: 2px 4px; margin: -2px -4px; }
     .task-dates:hover { background: #e8f0fe; color: #1a73e8; }
+    .task-dates.rollup { background: #ebebeb; border-radius: 10px; color: #999; cursor: default; }
+    .task-dates.rollup:hover { background: #ebebeb; color: #999; }
 
     .date-edit-popup {
       position: fixed; background: white; border-radius: 8px; padding: 12px;
@@ -214,7 +216,7 @@
     .team-add-row button:hover { background: #1557b0; }
 
     .task-row-actions {
-      position: absolute; right: 4px; top: 2px;
+      position: absolute; right: 0px; top: -11px;
       display: none; align-items: center; gap: 1px; background: white;
       border: 1px solid #d0d0d0; border-radius: 4px; padding: 1px 2px;
       box-shadow: 0 1px 4px rgba(0,0,0,0.1); z-index: 10;
@@ -656,7 +658,7 @@
           <span class="task-wbs">${task.wbs}</span>
           <span class="task-name" data-task-id="${task.id}" style="padding-left:${(task.level - 1) * 12}px"><button class="expand-btn ${task.collapsed ? 'collapsed' : ''} ${!hasChildren ? 'no-children' : ''}" onclick="toggleCollapse('${task.id}', event)">${task.collapsed ? '▶' : '▼'}</button><span class="task-name-text" title="${task.name}">${task.name}</span></span>
           <span class="task-assigned">${task.assigned || '-'}</span>
-          <span class="task-dates" onclick="event.stopPropagation();openDateEditor('${task.id}', this)">${fmtDateShort(task.start)}-${fmtDateShort(task.end)}</span>
+          <span class="task-dates${hasChildren ? ' rollup' : ''}"${hasChildren ? '' : ` onclick="event.stopPropagation();openDateEditor('${task.id}', this)"`}>${fmtDateShort(task.start)}-${fmtDateShort(task.end)}</span>
           <div class="task-row-actions">
             <button class="task-action-btn" onclick="event.stopPropagation();outdentTask('${task.id}')" title="Outdent">←</button>
             <button class="task-action-btn" onclick="event.stopPropagation();indentTask('${task.id}')" title="Indent">→</button>
