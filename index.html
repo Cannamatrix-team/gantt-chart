@@ -50,10 +50,10 @@
     .task-panel {
       min-width: 300px; max-width: 900px; background: white;
       border-right: 1px solid #e0e0e0; display: flex; flex-direction: column; overflow: hidden; flex-shrink: 0;
-      --col-handle: 30px; --col-wbs: 60px; --col-name: 230px; --col-assigned: 80px; --col-dates: 90px;
+      --col-handle: 30px; --col-wbs: 60px; --col-name: 200px; --col-assigned: 80px; --col-status: 85px; --col-dates: 90px;
     }
     .task-header {
-      display: grid; grid-template-columns: var(--col-handle) var(--col-wbs) var(--col-name) var(--col-assigned) var(--col-dates);
+      display: grid; grid-template-columns: var(--col-handle) var(--col-wbs) var(--col-name) var(--col-assigned) var(--col-status) var(--col-dates);
       padding: 10px 8px; background: #f8f9fa; border-bottom: 2px solid #e0e0e0;
       font-weight: 600; font-size: 11px; color: #5f6368; text-transform: uppercase; letter-spacing: 0.5px;
     }
@@ -65,7 +65,7 @@
     .col-resize-handle:hover, .col-resize-handle.active { background: rgba(26, 115, 232, 0.4); }
     .task-list { flex: 1; overflow-y: auto; overflow-x: hidden; position: relative; padding-top: 12px; }
     .task-row {
-      display: grid; grid-template-columns: var(--col-handle) var(--col-wbs) var(--col-name) var(--col-assigned) var(--col-dates);
+      display: grid; grid-template-columns: var(--col-handle) var(--col-wbs) var(--col-name) var(--col-assigned) var(--col-status) var(--col-dates);
       padding: 8px; border-bottom: 1px solid #f0f0f0; align-items: center; font-size: 13px; cursor: pointer; transition: background 0.15s;
       position: relative;
     }
@@ -88,6 +88,16 @@
     .task-name { display: flex; align-items: center; gap: 6px; padding-right: 10px; overflow: hidden; }
     .task-name-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
     .task-assigned { font-size: 11px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .task-status-select {
+      font-size: 11px; border: none; background: transparent; color: #555; cursor: pointer;
+      padding: 2px 0; outline: none; width: 100%; -webkit-appearance: none; appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23999'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 2px center; padding-right: 12px;
+    }
+    .task-status-select:hover { color: #1a73e8; }
+    .task-status-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; vertical-align: middle; flex-shrink: 0; }
+    .task-status-cell { display: flex; align-items: center; overflow: hidden; }
+
     .task-dates { font-size: 10px; color: #888; font-family: 'SF Mono', Monaco, monospace; cursor: pointer; border-radius: 3px; padding: 2px 4px; margin: -2px -4px; }
     .task-dates:hover { background: #e8f0fe; color: #1a73e8; }
     .task-dates.rollup { background: #ebebeb; border-radius: 10px; color: #999; cursor: default; }
@@ -287,7 +297,7 @@
     }
 
     .quick-add-row {
-      display: grid; grid-template-columns: var(--col-handle) var(--col-wbs) var(--col-name) var(--col-assigned) var(--col-dates);
+      display: grid; grid-template-columns: var(--col-handle) var(--col-wbs) var(--col-name) var(--col-assigned) var(--col-status) var(--col-dates);
       padding: 8px; border-bottom: 1px solid #f0f0f0; align-items: center; font-size: 13px;
     }
     .quick-add-input {
@@ -372,7 +382,7 @@
   
   <div class="main-container">
     <div class="task-panel" id="taskPanel">
-      <div class="task-header"><span></span><span class="task-header-cell">WBS<div class="col-resize-handle" data-col="wbs"></div></span><span class="task-header-cell">Task Name<div class="col-resize-handle" data-col="name"></div></span><span class="task-header-cell">Assigned<div class="col-resize-handle" data-col="assigned"></div></span><span class="task-header-cell">Dates<div class="col-resize-handle" data-col="dates"></div></span></div>
+      <div class="task-header"><span></span><span class="task-header-cell">WBS<div class="col-resize-handle" data-col="wbs"></div></span><span class="task-header-cell">Task Name<div class="col-resize-handle" data-col="name"></div></span><span class="task-header-cell">Assigned<div class="col-resize-handle" data-col="assigned"></div></span><span class="task-header-cell">Status<div class="col-resize-handle" data-col="status"></div></span><span class="task-header-cell">Dates<div class="col-resize-handle" data-col="dates"></div></span></div>
       <div class="task-list" id="taskList"></div>
     </div>
     <div class="gantt-panel">
@@ -408,7 +418,10 @@
           <div class="form-group"><label>Progress (%)</label><input type="number" id="taskProgress" min="0" max="100" value="0"></div>
           <div class="form-group"><label>Dependencies (WBS)</label><input type="text" id="taskDependencies" placeholder="e.g., 1.1, 1.2"></div>
         </div>
-        <div class="form-group"><div class="form-checkbox"><input type="checkbox" id="taskAutoRollup" checked><label for="taskAutoRollup">Auto Rollup (parent spans children)</label></div></div>
+        <div class="form-row">
+          <div class="form-group"><label>Status</label><select id="taskStatus"></select></div>
+          <div class="form-group"><div class="form-checkbox" style="margin-top:22px"><input type="checkbox" id="taskAutoRollup" checked><label for="taskAutoRollup">Auto Rollup (parent spans children)</label></div></div>
+        </div>
         <div class="form-group"><label>Bar Color</label><div class="color-swatch-row" id="barColorSwatches"></div><input type="hidden" id="taskColor"></div>
         <div class="form-group"><label>Status Indicator</label><div class="status-swatch-row" id="statusColorSwatches"></div><input type="hidden" id="taskStatusColor"></div>
         <div class="form-group"><label>Notes</label><textarea id="taskNotes" rows="2" placeholder="Optional notes"></textarea></div>
@@ -479,8 +492,8 @@
     let dragStartDate = null, dragEndDate = null, dragOriginalStart = null, dragOriginalEnd = null;
     let dependencyStartTask = null;
     const userColors = ['#4285f4', '#34a853', '#fbbc04', '#ea4335', '#9c27b0', '#00bcd4', '#ff5722', '#795548'];
-    let columnWidths = { handle: 30, wbs: 60, name: 230, assigned: 80, dates: 90 };
-    const COL_MIN_WIDTHS = { wbs: 40, name: 100, assigned: 40, dates: 50 };
+    let columnWidths = { handle: 30, wbs: 60, name: 200, assigned: 80, status: 85, dates: 90 };
+    const COL_MIN_WIDTHS = { wbs: 40, name: 100, assigned: 40, status: 60, dates: 50 };
 
     const BAR_COLOR_PRESETS = {
       blue:   { gradient: 'linear-gradient(135deg, #1a73e8 0%, #1557b0 100%)' },
@@ -498,6 +511,16 @@
     const STATUS_COLOR_PRESETS = {
       red: '#ea4335', orange: '#ff9800', yellow: '#fbbc04', green: '#34a853',
       blue: '#1a73e8', purple: '#9c27b0', gray: '#9e9e9e'
+    };
+
+    const TASK_STATUSES = {
+      '': { label: '-', color: '' },
+      'not_started': { label: 'Not Started', color: '#9e9e9e' },
+      'in_progress': { label: 'In Progress', color: '#1a73e8' },
+      'complete': { label: 'Complete', color: '#34a853' },
+      'on_hold': { label: 'On Hold', color: '#ff9800' },
+      'at_risk': { label: 'At Risk', color: '#ea4335' },
+      'blocked': { label: 'Blocked', color: '#9c27b0' }
     };
 
     // ========== INIT ==========
@@ -658,6 +681,12 @@
           <span class="task-wbs">${task.wbs}</span>
           <span class="task-name" data-task-id="${task.id}" style="padding-left:${(task.level - 1) * 12}px"><button class="expand-btn ${task.collapsed ? 'collapsed' : ''} ${!hasChildren ? 'no-children' : ''}" onclick="toggleCollapse('${task.id}', event)">${task.collapsed ? '▶' : '▼'}</button><span class="task-name-text" title="${task.name}">${task.name}</span></span>
           <span class="task-assigned">${task.assigned || '-'}</span>
+          <span class="task-status-cell" onclick="event.stopPropagation()">
+            <span class="task-status-dot" style="background:${TASK_STATUSES[task.status || '']?.color || 'transparent'}"></span>
+            <select class="task-status-select" onchange="updateTaskStatus('${task.id}', this.value)">
+              ${Object.entries(TASK_STATUSES).map(([k, v]) => `<option value="${k}"${(task.status || '') === k ? ' selected' : ''}>${v.label}</option>`).join('')}
+            </select>
+          </span>
           <span class="task-dates${hasChildren ? ' rollup' : ''}"${hasChildren ? '' : ` onclick="event.stopPropagation();openDateEditor('${task.id}', this)"`}>${fmtDateShort(task.start)}-${fmtDateShort(task.end)}</span>
           <div class="task-row-actions">
             <button class="task-action-btn" onclick="event.stopPropagation();outdentTask('${task.id}')" title="Outdent">←</button>
@@ -804,6 +833,7 @@
       panel.style.setProperty('--col-wbs', columnWidths.wbs + 'px');
       panel.style.setProperty('--col-name', columnWidths.name + 'px');
       panel.style.setProperty('--col-assigned', columnWidths.assigned + 'px');
+      panel.style.setProperty('--col-status', columnWidths.status + 'px');
       panel.style.setProperty('--col-dates', columnWidths.dates + 'px');
       const total = Object.values(columnWidths).reduce((s, w) => s + w, 0) + 16;
       panel.style.width = total + 'px';
@@ -889,16 +919,19 @@
       if (!isDragging) return;
       if ((dragType === 'move' || dragType?.startsWith('resize')) && dragTask) {
         document.querySelector(`.task-bar[data-task-id="${dragTask.id}"]`)?.classList.remove('dragging');
-        const idx = tasks.findIndex(t => t.id === dragTask.id);
-        if (idx !== -1) {
-          if (dragOriginalStart) tasks[idx].start = fmtDate(dragOriginalStart);
-          if (dragOriginalEnd) tasks[idx].end = fmtDate(dragOriginalEnd);
-          tasks[idx].duration = Math.ceil((parseLocalDate(tasks[idx].end) - parseLocalDate(tasks[idx].start)) / 864e5) + 1;
-          saveTaskToDb(tasks[idx]);
-          toast('Task updated');
+        // Only save if the bar was actually moved or resized
+        if (dragOriginalStart || dragOriginalEnd) {
+          const idx = tasks.findIndex(t => t.id === dragTask.id);
+          if (idx !== -1) {
+            if (dragOriginalStart) tasks[idx].start = fmtDate(dragOriginalStart);
+            if (dragOriginalEnd) tasks[idx].end = fmtDate(dragOriginalEnd);
+            tasks[idx].duration = Math.ceil((parseLocalDate(tasks[idx].end) - parseLocalDate(tasks[idx].start)) / 864e5) + 1;
+            saveTaskToDb(tasks[idx]);
+            toast('Task updated');
+          }
+          render();
         }
         dragOriginalStart = dragOriginalEnd = dragTask = null; isDragging = false; dragType = null;
-        render();
       } else if (dragType === 'dependency') {
         document.getElementById('tempDependencyLine').style.display = 'none';
         const targetBar = document.elementFromPoint(e.clientX, e.clientY)?.closest('.task-bar');
@@ -935,6 +968,7 @@
       document.getElementById('taskAutoRollup').checked = true;
       document.getElementById('taskNotes').value = '';
       document.getElementById('deleteTaskBtn').style.display = 'none';
+      populateStatusDropdown('');
       renderBarColorSwatches('');
       renderStatusColorSwatches('');
       document.getElementById('taskModal').classList.add('visible');
@@ -954,6 +988,7 @@
       document.getElementById('taskAutoRollup').checked = t.autoRollup !== false;
       document.getElementById('taskNotes').value = t.notes || '';
       document.getElementById('deleteTaskBtn').style.display = 'block';
+      populateStatusDropdown(t.status || '');
       renderBarColorSwatches(t.color || '');
       renderStatusColorSwatches(t.statusColor || '');
       document.getElementById('taskModal').classList.add('visible');
@@ -975,6 +1010,7 @@
         progress: parseInt(document.getElementById('taskProgress').value) || 0,
         dependencies: document.getElementById('taskDependencies').value.split(',').map(d => d.trim()).filter(d => d),
         autoRollup: document.getElementById('taskAutoRollup').checked,
+        status: document.getElementById('taskStatus').value || '',
         color: document.getElementById('taskColor').value || null,
         statusColor: document.getElementById('taskStatusColor').value || null,
         notes: document.getElementById('taskNotes').value,
@@ -1030,6 +1066,14 @@
       document.getElementById('taskNotes').value = '';
       document.getElementById('deleteTaskBtn').style.display = 'none';
       document.getElementById('taskModal').classList.add('visible');
+    }
+
+    function updateTaskStatus(id, status) {
+      const t = tasks.find(x => x.id === id);
+      if (!t) return;
+      t.status = status;
+      saveTaskToDb(t);
+      render();
     }
 
     function editSelectedTask() { if (contextTaskId) showEditTaskModal(contextTaskId); }
@@ -1213,6 +1257,13 @@
         swatch.addEventListener('click', () => { hidden.value = key; container.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected')); swatch.classList.add('selected'); });
         container.appendChild(swatch);
       });
+    }
+
+    function populateStatusDropdown(selected) {
+      const sel = document.getElementById('taskStatus');
+      sel.innerHTML = Object.entries(TASK_STATUSES).map(([k, v]) =>
+        `<option value="${k}"${selected === k ? ' selected' : ''}>${v.label}</option>`
+      ).join('');
     }
 
     function renderStatusColorSwatches(selectedColor) {
@@ -1418,7 +1469,7 @@
       const newTask = {
         id: 'task_' + Date.now(), wbs: newWbs, name: 'New Task', level: newWbs.split('.').length,
         assigned: '', start: today, end: today, duration: 1, progress: 0,
-        dependencies: [], autoRollup: true, collapsed: false
+        dependencies: [], autoRollup: true, status: '', collapsed: false
       };
       tasks.push(newTask);
       tasks.sort((a, b) => String(a.wbs).localeCompare(String(b.wbs), undefined, { numeric: true }));
@@ -1445,7 +1496,7 @@
       const newTask = {
         id: 'task_' + Date.now(), wbs: newWbs, name: 'New Subtask', level: newWbs.split('.').length,
         assigned: '', start: parent.start, end: parent.end, duration: parent.duration || 1, progress: 0,
-        dependencies: [], autoRollup: true, collapsed: false
+        dependencies: [], autoRollup: true, status: '', collapsed: false
       };
       parent.collapsed = false;
       saveTaskToDb(parent);
@@ -1880,7 +1931,7 @@
       row.innerHTML = `
         <span></span><span></span>
         <input class="quick-add-input" type="text" placeholder="+ Add task...">
-        <span></span><span></span>`;
+        <span></span><span></span><span></span>`;
       const input = row.querySelector('.quick-add-input');
       input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
@@ -1893,7 +1944,7 @@
           const newTask = {
             id: 'task_' + Date.now(), wbs: newWbs, name, level: 1,
             assigned: '', start: today, end: today, duration: 1, progress: 0,
-            dependencies: [], autoRollup: true, collapsed: false
+            dependencies: [], autoRollup: true, status: '', collapsed: false
           };
           tasks.push(newTask);
           tasks.sort((a, b) => String(a.wbs).localeCompare(String(b.wbs), undefined, { numeric: true }));
