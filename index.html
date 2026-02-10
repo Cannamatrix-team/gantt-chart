@@ -50,7 +50,7 @@
     .task-panel {
       min-width: 300px; max-width: 900px; background: white;
       border-right: 1px solid #e0e0e0; display: flex; flex-direction: column; overflow: hidden; flex-shrink: 0;
-      --col-handle: 30px; --col-wbs: 60px; --col-name: 200px; --col-assigned: 80px; --col-status: 85px; --col-dates: 90px;
+      --col-handle: 30px; --col-wbs: 60px; --col-name: 200px; --col-assigned: 80px; --col-status: 110px; --col-dates: 90px;
     }
     .task-header {
       display: grid; grid-template-columns: var(--col-handle) var(--col-wbs) var(--col-name) var(--col-assigned) var(--col-status) var(--col-dates);
@@ -93,20 +93,21 @@
     }
     .task-assigned:hover { background: #e8f0fe; color: #1a73e8; }
     .task-status-cell {
-      display: flex; align-items: center; overflow: hidden; cursor: pointer;
-      background: #f5f5f5; border: 1px solid #e0e0e0; border-radius: 4px; padding: 2px 6px;
-      gap: 5px; height: 24px; max-width: 80px; box-sizing: border-box;
+      position: relative; overflow: hidden; cursor: pointer;
+      background: #f5f5f5; border: 1px solid #e0e0e0; border-radius: 4px;
+      height: 24px; max-width: 105px; box-sizing: border-box;
     }
     .task-status-cell:hover { border-color: #1a73e8; background: #e8f0fe; }
     .task-status-select {
       font-size: 11px; border: none; background: transparent; color: #555; cursor: pointer;
-      padding: 0; outline: none; flex: 1; min-width: 0;
-      -webkit-appearance: none; appearance: none;
+      padding: 2px 18px 2px 18px; outline: none; width: 100%; height: 100%;
+      -webkit-appearance: none; appearance: none; position: relative; z-index: 2;
     }
-    .task-status-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .task-status-dot { position: absolute; left: 6px; top: 50%; transform: translateY(-50%); width: 7px; height: 7px; border-radius: 50%; z-index: 1; }
     .task-status-cell::after {
-      content: ''; width: 0; height: 0; border-left: 4px solid transparent;
-      border-right: 4px solid transparent; border-top: 4px solid #999; flex-shrink: 0;
+      content: ''; position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+      width: 0; height: 0; border-left: 4px solid transparent;
+      border-right: 4px solid transparent; border-top: 4px solid #999; pointer-events: none; z-index: 1;
     }
 
     .assign-popup {
@@ -156,7 +157,7 @@
     
     .task-bar {
       position: absolute; height: 26px; border-radius: 4px; cursor: move; display: flex; align-items: center;
-      z-index: 10; transition: box-shadow 0.15s; top: 50%; transform: translateY(-50%);
+      z-index: 10; transition: box-shadow 0.15s; top: 50%; transform: translateY(-50%); overflow: visible;
     }
     .task-bar:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 20; }
     .task-bar.dragging { opacity: 0.8; box-shadow: 0 4px 12px rgba(0,0,0,0.3); z-index: 100; }
@@ -164,7 +165,18 @@
     .task-bar.level-2 { background: linear-gradient(135deg, #81c995 0%, #a8ddb8 100%); }
     .task-bar.level-3 { background: linear-gradient(135deg, #fdd663 0%, #fde293 100%); }
     .task-bar-progress { position: absolute; left: 0; top: 0; bottom: 0; background: rgba(0,0,0,0.2); border-radius: 4px 0 0 4px; pointer-events: none; }
-    .task-bar-label { color: white; font-size: 11px; font-weight: 500; padding: 0 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 2px rgba(0,0,0,0.2); position: relative; z-index: 1; }
+    .task-bar-label { display: none; }
+    .task-bar-external {
+      position: absolute; left: 100%; top: 50%; transform: translateY(-50%);
+      display: flex; align-items: center; gap: 4px; padding-left: 6px;
+      white-space: nowrap; pointer-events: none; z-index: 1;
+    }
+    .task-bar-avatar {
+      width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-weight: 600; font-size: 9px; color: white; flex-shrink: 0; border: 1.5px solid white;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+    }
+    .task-bar-name { font-size: 12px; font-weight: 500; color: #333; }
     .task-bar-resize { position: absolute; top: 0; bottom: 0; width: 8px; cursor: ew-resize; z-index: 5; }
     .task-bar-resize.left { left: 0; border-radius: 4px 0 0 4px; }
     .task-bar-resize.right { right: 0; border-radius: 0 4px 4px 0; }
@@ -565,7 +577,7 @@
     let dragStartDate = null, dragEndDate = null, dragOriginalStart = null, dragOriginalEnd = null;
     let dependencyStartTask = null;
     const userColors = ['#4285f4', '#34a853', '#fbbc04', '#ea4335', '#9c27b0', '#00bcd4', '#ff5722', '#795548'];
-    let columnWidths = { handle: 30, wbs: 60, name: 200, assigned: 80, status: 85, dates: 90 };
+    let columnWidths = { handle: 30, wbs: 60, name: 200, assigned: 80, status: 110, dates: 90 };
     const COL_MIN_WIDTHS = { wbs: 40, name: 100, assigned: 40, status: 60, dates: 50 };
 
     const BAR_COLOR_PRESETS = {
@@ -891,7 +903,15 @@
       const statusDef = TASK_STATUSES[task.status || ''];
       const stripeColor = (statusDef && statusDef.color) || (task.statusColor && STATUS_COLOR_PRESETS[task.statusColor]) || '';
       const statusStripeHtml = stripeColor ? `<div class="status-stripe" style="background:${stripeColor}"></div>` : '';
+      const assignees = (task.assigned || '').split(',').map(s => s.trim()).filter(Boolean);
+      const avatarsHtml = assignees.map(name => {
+        const initials = name.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2);
+        const colorIdx = teamMembers.indexOf(name);
+        const color = colorIdx >= 0 ? userColors[colorIdx % userColors.length] : '#666';
+        return `<div class="task-bar-avatar" style="background:${color}">${initials}</div>`;
+      }).join('');
       bar.innerHTML = `${statusStripeHtml}<div class="task-bar-progress" style="width:${task.progress || 0}%"></div><span class="task-bar-label">${task.name}</span>
+        <div class="task-bar-external">${avatarsHtml}<span class="task-bar-name">${task.name}</span></div>
         <div class="task-bar-resize left"></div><div class="task-bar-resize right"></div>
         <div class="dependency-connector left"></div><div class="dependency-connector right"></div>`;
       bar.querySelector('.task-bar-resize.left').addEventListener('mousedown', (e) => startResize(e, task, 'left'));
