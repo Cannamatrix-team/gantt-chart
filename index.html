@@ -139,10 +139,10 @@
     
     .gantt-panel { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: white; }
     .gantt-header { display: flex; flex-direction: column; border-bottom: 2px solid #e0e0e0; background: #f8f9fa; position: sticky; top: 0; z-index: 100; overflow: hidden; }
-    .gantt-months { display: flex; height: 24px; }
-    .gantt-month { display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px; color: #333; border-right: 1px solid #e0e0e0; background: #f0f0f0; box-sizing: border-box; }
-    .gantt-days { display: flex; height: 34px; }
-    .gantt-day { display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; color: #666; border-right: 1px solid #f0f0f0; min-width: var(--day-width); width: var(--day-width); gap: 0; line-height: 1.1; box-sizing: border-box; }
+    .gantt-months { display: flex; height: 24px; flex-shrink: 0; }
+    .gantt-month { display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12px; color: #333; border-right: 1px solid #e0e0e0; background: #f0f0f0; box-sizing: border-box; flex-shrink: 0; }
+    .gantt-days { display: flex; height: 34px; flex-shrink: 0; }
+    .gantt-day { display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; color: #666; border-right: 1px solid #f0f0f0; min-width: var(--day-width); width: var(--day-width); gap: 0; line-height: 1.1; box-sizing: border-box; flex-shrink: 0; }
     .gantt-day-letter { font-size: 8px; color: #999; text-transform: uppercase; font-weight: 500; }
     .gantt-day.weekend { background: #f5f5f5; color: #999; }
     .gantt-day.today { background: #fff3e0; color: #e65100; font-weight: 600; }
@@ -150,7 +150,7 @@
     .gantt-body { position: relative; min-height: 100%; }
     .gantt-row { height: 41px; display: flex; align-items: center; border-bottom: 1px solid #f0f0f0; position: relative; }
     .gantt-row-bg { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; }
-    .gantt-cell { min-width: var(--day-width); width: var(--day-width); height: 100%; border-right: 1px solid #f8f8f8; box-sizing: border-box; }
+    .gantt-cell { min-width: var(--day-width); width: var(--day-width); height: 100%; border-right: 1px solid #f8f8f8; box-sizing: border-box; flex-shrink: 0; }
     .gantt-cell.weekend { background: #fafafa; }
     .today-line { position: absolute; top: 0; bottom: 0; width: 2px; background: #ea4335; z-index: 50; pointer-events: none; }
     
@@ -673,15 +673,10 @@
     function calcProjectDates() {
       const today = new Date(); today.setHours(0,0,0,0);
       const dates = tasks.filter(t => t.start && t.end).flatMap(t => [parseLocalDate(t.start), parseLocalDate(t.end)]);
+      dates.push(today);
       if (dates.length === 0) { projectStartDate = new Date(today); projectEndDate = new Date(today); projectEndDate.setDate(projectEndDate.getDate() + 30); return; }
       projectStartDate = new Date(Math.min(...dates));
       projectEndDate = new Date(Math.max(...dates));
-      // Include today only if it's within or near the task range (within 30 days of either end)
-      const msPerDay = 864e5;
-      if (today >= new Date(projectStartDate.getTime() - 30 * msPerDay) && today <= new Date(projectEndDate.getTime() + 30 * msPerDay)) {
-        if (today < projectStartDate) projectStartDate = new Date(today);
-        if (today > projectEndDate) projectEndDate = new Date(today);
-      }
       projectStartDate.setDate(projectStartDate.getDate() - 5);
       projectEndDate.setDate(projectEndDate.getDate() + 10);
     }
@@ -751,6 +746,9 @@
       mc.innerHTML = ''; dc.innerHTML = '';
       document.documentElement.style.setProperty('--day-width', dayWidth + 'px');
       const totalDays = Math.ceil((projectEndDate - projectStartDate) / 864e5);
+      const totalWidth = totalDays * dayWidth;
+      mc.style.width = totalWidth + 'px';
+      dc.style.width = totalWidth + 'px';
       let cur = new Date(projectStartDate), curMonth = -1, monthDays = 0;
       for (let i = 0; i < totalDays; i++) {
         const day = document.createElement('div');
