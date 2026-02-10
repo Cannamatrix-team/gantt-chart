@@ -554,6 +554,7 @@
     let db, tasksRef, baselinesRef, presenceRef, userPresenceRef, teamRef, sprintsRef;
     let tasks = [], baselines = [], activeBaseline = null;
     let sprints = [], activeSprintIds = new Set();
+    let collapsedIds = new Set();
     let selectedTaskId = null, contextTaskId = null;
     let teamMembers = ['Logan', 'Manny', 'Kevelin', 'Sul'];
     let onlineUsers = {};
@@ -649,6 +650,7 @@
       presenceRef.on('value', (snap) => { onlineUsers = snap.val() || {}; renderOnlineUsers(); });
     }
 
+    let initialLoadDone = false;
     function setupDataListeners() {
       tasksRef.on('value', (snap) => {
         const data = snap.val();
@@ -657,6 +659,10 @@
           tasks.sort((a, b) => String(a.wbs).localeCompare(String(b.wbs), undefined, { numeric: true }));
         } else {
           tasks = [];
+        }
+        if (!initialLoadDone) {
+          initialLoadDone = true;
+          tasks.forEach(t => { if (tasks.some(c => c.wbs !== t.wbs && String(c.wbs).startsWith(t.wbs + '.'))) collapsedIds.add(t.id); });
         }
         document.getElementById('loadingOverlay').classList.add('hidden');
         populateTeamDropdown();
@@ -700,16 +706,16 @@
 
     function loadSampleData() {
       tasks = [
-        { id: 'id1', wbs: '1', name: 'Sprint 7 - RCM Model Foundation', level: 1, assigned: 'Logan', start: '2026-01-27', end: '2026-02-07', duration: 12, progress: 0, dependencies: [], autoRollup: true, collapsed: false },
-        { id: 'id2', wbs: '1.1', name: 'Complete Davoud Genotyping', level: 2, assigned: 'Kevelin', start: '2026-01-27', end: '2026-01-31', duration: 5, progress: 0, dependencies: [], autoRollup: true, collapsed: false },
-        { id: 'id3', wbs: '1.1.1', name: 'Run GLIMPSE Pipeline', level: 3, assigned: 'Kevelin', start: '2026-01-27', end: '2026-01-29', duration: 3, progress: 0, dependencies: [], autoRollup: false, collapsed: false },
-        { id: 'id4', wbs: '1.1.2', name: 'QC Genotype Results', level: 3, assigned: 'Kevelin', start: '2026-01-30', end: '2026-01-31', duration: 2, progress: 0, dependencies: ['1.1.1'], autoRollup: false, collapsed: false },
-        { id: 'id5', wbs: '1.2', name: 'GWAS Filtering Plugin', level: 2, assigned: 'Logan', start: '2026-02-01', end: '2026-02-07', duration: 7, progress: 0, dependencies: ['1.1'], autoRollup: true, collapsed: false },
-        { id: 'id6', wbs: '1.2.1', name: 'Implement Core Logic', level: 3, assigned: 'Logan', start: '2026-02-01', end: '2026-02-04', duration: 4, progress: 0, dependencies: [], autoRollup: false, collapsed: false },
-        { id: 'id7', wbs: '1.2.2', name: 'Testing & Validation', level: 3, assigned: 'Sul', start: '2026-02-05', end: '2026-02-07', duration: 3, progress: 0, dependencies: ['1.2.1'], autoRollup: false, collapsed: false },
-        { id: 'id8', wbs: '2', name: 'Sprint 8 - Feature Integration', level: 1, assigned: 'Logan', start: '2026-02-10', end: '2026-02-21', duration: 12, progress: 0, dependencies: ['1'], autoRollup: true, collapsed: false },
-        { id: 'id9', wbs: '2.1', name: 'GO2Vec Annotation Features', level: 2, assigned: 'Sul', start: '2026-02-10', end: '2026-02-14', duration: 5, progress: 0, dependencies: [], autoRollup: false, collapsed: false },
-        { id: 'id10', wbs: '2.2', name: 'Data Contracts Implementation', level: 2, assigned: 'Logan', start: '2026-02-17', end: '2026-02-21', duration: 5, progress: 0, dependencies: ['2.1'], autoRollup: false, collapsed: false }
+        { id: 'id1', wbs: '1', name: 'Sprint 7 - RCM Model Foundation', level: 1, assigned: 'Logan', start: '2026-01-27', end: '2026-02-07', duration: 12, progress: 0, dependencies: [], autoRollup: true },
+        { id: 'id2', wbs: '1.1', name: 'Complete Davoud Genotyping', level: 2, assigned: 'Kevelin', start: '2026-01-27', end: '2026-01-31', duration: 5, progress: 0, dependencies: [], autoRollup: true },
+        { id: 'id3', wbs: '1.1.1', name: 'Run GLIMPSE Pipeline', level: 3, assigned: 'Kevelin', start: '2026-01-27', end: '2026-01-29', duration: 3, progress: 0, dependencies: [], autoRollup: false },
+        { id: 'id4', wbs: '1.1.2', name: 'QC Genotype Results', level: 3, assigned: 'Kevelin', start: '2026-01-30', end: '2026-01-31', duration: 2, progress: 0, dependencies: ['1.1.1'], autoRollup: false },
+        { id: 'id5', wbs: '1.2', name: 'GWAS Filtering Plugin', level: 2, assigned: 'Logan', start: '2026-02-01', end: '2026-02-07', duration: 7, progress: 0, dependencies: ['1.1'], autoRollup: true },
+        { id: 'id6', wbs: '1.2.1', name: 'Implement Core Logic', level: 3, assigned: 'Logan', start: '2026-02-01', end: '2026-02-04', duration: 4, progress: 0, dependencies: [], autoRollup: false },
+        { id: 'id7', wbs: '1.2.2', name: 'Testing & Validation', level: 3, assigned: 'Sul', start: '2026-02-05', end: '2026-02-07', duration: 3, progress: 0, dependencies: ['1.2.1'], autoRollup: false },
+        { id: 'id8', wbs: '2', name: 'Sprint 8 - Feature Integration', level: 1, assigned: 'Logan', start: '2026-02-10', end: '2026-02-21', duration: 12, progress: 0, dependencies: ['1'], autoRollup: true },
+        { id: 'id9', wbs: '2.1', name: 'GO2Vec Annotation Features', level: 2, assigned: 'Sul', start: '2026-02-10', end: '2026-02-14', duration: 5, progress: 0, dependencies: [], autoRollup: false },
+        { id: 'id10', wbs: '2.2', name: 'Data Contracts Implementation', level: 2, assigned: 'Logan', start: '2026-02-17', end: '2026-02-21', duration: 5, progress: 0, dependencies: ['2.1'], autoRollup: false }
       ];
     }
 
@@ -742,10 +748,10 @@
     }
 
     function getVisibleTasks() {
-      const collapsed = new Set(tasks.filter(t => t.collapsed).map(t => String(t.wbs)));
+      const collapsedWbsSet = new Set(tasks.filter(t => collapsedIds.has(t.id)).map(t => String(t.wbs)));
       return tasks.filter(task => {
         const parts = String(task.wbs).split('.');
-        for (let i = 1; i < parts.length; i++) { if (collapsed.has(parts.slice(0, i).join('.'))) return false; }
+        for (let i = 1; i < parts.length; i++) { if (collapsedWbsSet.has(parts.slice(0, i).join('.'))) return false; }
         return true;
       });
     }
@@ -761,7 +767,7 @@
         row.innerHTML = `
           <span class="drag-handle" onmousedown="startTaskListDrag(event, '${task.id}')">⠿</span>
           <span class="task-wbs">${task.wbs}</span>
-          <span class="task-name" data-task-id="${task.id}" style="padding-left:${(task.level - 1) * 12}px"><button class="expand-btn ${task.collapsed ? 'collapsed' : ''} ${!hasChildren ? 'no-children' : ''}" onclick="toggleCollapse('${task.id}', event)">${task.collapsed ? '▶' : '▼'}</button><span class="task-name-text" title="${task.name}">${task.name}</span></span>
+          <span class="task-name" data-task-id="${task.id}" style="padding-left:${(task.level - 1) * 12}px"><button class="expand-btn ${collapsedIds.has(task.id) ? 'collapsed' : ''} ${!hasChildren ? 'no-children' : ''}" onclick="toggleCollapse('${task.id}', event)">${collapsedIds.has(task.id) ? '▶' : '▼'}</button><span class="task-name-text" title="${task.name}">${task.name}</span></span>
           <span class="task-assigned" onclick="event.stopPropagation();openAssignPopup('${task.id}', this)">${task.assigned || '-'}</span>
           <span class="task-status-cell" onclick="event.stopPropagation()">
             <span class="task-status-dot" style="background:${TASK_STATUSES[task.status || '']?.color || 'transparent'}"></span>
@@ -1060,7 +1066,7 @@
 
     // ========== TASK CRUD ==========
     function selectTask(id) { selectedTaskId = id; document.querySelectorAll('.task-row').forEach(r => r.classList.toggle('selected', r.dataset.taskId === id)); }
-    function toggleCollapse(id, e) { e.stopPropagation(); const t = tasks.find(x => x.id === id); if (t) { t.collapsed = !t.collapsed; saveTaskToDb(t); render(); } }
+    function toggleCollapse(id, e) { e.stopPropagation(); if (collapsedIds.has(id)) { collapsedIds.delete(id); } else { collapsedIds.add(id); } render(); }
 
     function showAddTaskModal() {
       document.getElementById('taskModalTitle').textContent = 'Add Task';
@@ -1120,10 +1126,8 @@
         status: document.getElementById('taskStatus').value || '',
         color: document.getElementById('taskColor').value || null,
         statusColor: document.getElementById('taskStatusColor').value || null,
-        notes: document.getElementById('taskNotes').value,
-        collapsed: false
+        notes: document.getElementById('taskNotes').value
       };
-      if (editId) { const existing = tasks.find(x => x.id === editId); if (existing) { data.collapsed = existing.collapsed || false; } }
       if (editId) {
         const t = tasks.find(x => x.id === editId);
         if (t) { Object.assign(t, data); saveTaskToDb(t); }
@@ -1198,7 +1202,7 @@
       }
       selectedTaskId = null; render(); toast('Task deleted');
     }
-    function toggleCollapseContext() { if (contextTaskId) { const t = tasks.find(x => x.id === contextTaskId); if (t) { t.collapsed = !t.collapsed; saveTaskToDb(t); render(); } } }
+    function toggleCollapseContext() { if (contextTaskId) { if (collapsedIds.has(contextTaskId)) { collapsedIds.delete(contextTaskId); } else { collapsedIds.add(contextTaskId); } render(); } }
 
     function saveTaskToDb(task) { if (tasksRef) { const { id, ...d } = task; tasksRef.child(id).set(d); } }
 
@@ -1286,8 +1290,8 @@
     }
 
     // ========== COLLAPSE/EXPAND ==========
-    function expandAll() { tasks.forEach(t => t.collapsed = false); if (tasksRef) { const updates = {}; tasks.forEach(t => updates[t.id + '/collapsed'] = false); tasksRef.update(updates); } render(); }
-    function collapseAll() { tasks.forEach(t => { if (tasks.some(c => c.wbs !== t.wbs && String(c.wbs).startsWith(t.wbs + '.'))) t.collapsed = true; }); if (tasksRef) { const updates = {}; tasks.forEach(t => updates[t.id + '/collapsed'] = t.collapsed || false); tasksRef.update(updates); } render(); }
+    function expandAll() { collapsedIds.clear(); render(); }
+    function collapseAll() { collapsedIds.clear(); tasks.forEach(t => { if (tasks.some(c => c.wbs !== t.wbs && String(c.wbs).startsWith(t.wbs + '.'))) collapsedIds.add(t.id); }); render(); }
 
     // ========== BASELINES ==========
     function saveBaseline() {
@@ -1593,7 +1597,7 @@
       });
 
       // Expand the new parent
-      above.collapsed = false;
+      collapsedIds.delete(above.id);
 
       // Recalculate to fix sibling numbering
       tasks.sort((a, b) => String(a.wbs).localeCompare(String(b.wbs), undefined, { numeric: true }));
@@ -1669,7 +1673,7 @@
       const newTask = {
         id: 'task_' + Date.now(), wbs: newWbs, name: 'New Task', level: newWbs.split('.').length,
         assigned: '', start: today, end: today, duration: 1, progress: 0,
-        dependencies: [], autoRollup: true, status: '', collapsed: false
+        dependencies: [], autoRollup: true, status: ''
       };
       tasks.push(newTask);
       tasks.sort((a, b) => String(a.wbs).localeCompare(String(b.wbs), undefined, { numeric: true }));
@@ -1696,10 +1700,9 @@
       const newTask = {
         id: 'task_' + Date.now(), wbs: newWbs, name: 'New Subtask', level: newWbs.split('.').length,
         assigned: '', start: parent.start, end: parent.end, duration: parent.duration || 1, progress: 0,
-        dependencies: [], autoRollup: true, status: '', collapsed: false
+        dependencies: [], autoRollup: true, status: ''
       };
-      parent.collapsed = false;
-      saveTaskToDb(parent);
+      collapsedIds.delete(parent.id);
       tasks.push(newTask);
       tasks.sort((a, b) => String(a.wbs).localeCompare(String(b.wbs), undefined, { numeric: true }));
       saveTaskToDb(newTask);
@@ -1975,12 +1978,12 @@
       </div>`;
 
       // If parent is expanded, add visible children to ghost
-      if (!draggedTask.collapsed) {
+      if (!collapsedIds.has(draggedTask.id)) {
         const childTasks = tasks.filter(t =>
           t.id !== draggedTask.id && String(t.wbs).startsWith(draggedWbs + '.')
         );
         // Respect collapse — only show tasks whose ancestors (within this subtree) are expanded
-        const collapsedWbs = new Set(childTasks.filter(t => t.collapsed).map(t => String(t.wbs)));
+        const collapsedWbs = new Set(childTasks.filter(t => collapsedIds.has(t.id)).map(t => String(t.wbs)));
         const visibleChildren = childTasks.filter(child => {
           const parts = String(child.wbs).split('.');
           for (let i = 1; i < parts.length; i++) {
@@ -2209,7 +2212,7 @@
           const newTask = {
             id: 'task_' + Date.now(), wbs: newWbs, name, level: 1,
             assigned: '', start: today, end: today, duration: 1, progress: 0,
-            dependencies: [], autoRollup: true, status: '', collapsed: false
+            dependencies: [], autoRollup: true, status: ''
           };
           tasks.push(newTask);
           tasks.sort((a, b) => String(a.wbs).localeCompare(String(b.wbs), undefined, { numeric: true }));
