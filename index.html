@@ -601,6 +601,7 @@
     }
 
     function setupDataListeners() {
+      let firstLoad = true;
       tasksRef.on('value', (snap) => {
         const data = snap.val();
         if (data) {
@@ -612,6 +613,7 @@
         document.getElementById('loadingOverlay').classList.add('hidden');
         populateTeamDropdown();
         render();
+        if (firstLoad) { firstLoad = false; scrollToToday(); }
       });
       baselinesRef.on('value', (snap) => {
         const data = snap.val();
@@ -788,10 +790,22 @@
       });
       const today = new Date(); today.setHours(0,0,0,0);
       if (today >= projectStartDate && today <= projectEndDate) {
+        const todayOffset = Math.floor((today - projectStartDate) / 864e5);
         const line = document.createElement('div');
         line.className = 'today-line';
-        line.style.left = (Math.floor((today - projectStartDate) / 864e5) * dayWidth + dayWidth / 2) + 'px';
+        line.style.left = (todayOffset * dayWidth + dayWidth / 2) + 'px';
         c.appendChild(line);
+      }
+    }
+
+    function scrollToToday() {
+      const today = new Date(); today.setHours(0,0,0,0);
+      if (today >= projectStartDate && today <= projectEndDate) {
+        const todayOffset = Math.floor((today - projectStartDate) / 864e5);
+        const todayPx = todayOffset * dayWidth;
+        const gc = document.getElementById('ganttBodyContainer');
+        gc.scrollLeft = Math.max(0, todayPx - gc.clientWidth / 2);
+        document.getElementById('ganttHeader').scrollLeft = gc.scrollLeft;
       }
     }
 
