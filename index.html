@@ -87,16 +87,40 @@
     .task-wbs { font-family: 'SF Mono', Monaco, monospace; font-size: 11px; color: #666; }
     .task-name { display: flex; align-items: center; gap: 6px; padding-right: 10px; overflow: hidden; }
     .task-name-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
-    .task-assigned { font-size: 11px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .task-assigned {
+      font-size: 11px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      cursor: pointer; border-radius: 3px; padding: 2px 4px; margin: -2px -4px;
+    }
+    .task-assigned:hover { background: #e8f0fe; color: #1a73e8; }
+    .task-status-cell {
+      display: flex; align-items: center; overflow: hidden; cursor: pointer;
+      background: #f5f5f5; border: 1px solid #e0e0e0; border-radius: 4px; padding: 2px 6px;
+      gap: 5px; height: 24px;
+    }
+    .task-status-cell:hover { border-color: #1a73e8; background: #e8f0fe; }
     .task-status-select {
       font-size: 11px; border: none; background: transparent; color: #555; cursor: pointer;
-      padding: 2px 0; outline: none; width: 100%; -webkit-appearance: none; appearance: none;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23999'/%3E%3C/svg%3E");
-      background-repeat: no-repeat; background-position: right 2px center; padding-right: 12px;
+      padding: 0; outline: none; flex: 1; min-width: 0;
+      -webkit-appearance: none; appearance: none;
     }
-    .task-status-select:hover { color: #1a73e8; }
-    .task-status-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 4px; vertical-align: middle; flex-shrink: 0; }
-    .task-status-cell { display: flex; align-items: center; overflow: hidden; }
+    .task-status-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .task-status-cell::after {
+      content: ''; width: 0; height: 0; border-left: 4px solid transparent;
+      border-right: 4px solid transparent; border-top: 4px solid #999; flex-shrink: 0;
+    }
+
+    .assign-popup {
+      position: fixed; background: white; border-radius: 8px; padding: 8px 0;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.18); z-index: 3000; min-width: 160px;
+      border: 1px solid #e0e0e0; max-height: 250px; overflow-y: auto;
+    }
+    .assign-popup-item {
+      display: flex; align-items: center; gap: 8px; padding: 6px 12px; cursor: pointer;
+      font-size: 13px; color: #333; transition: background 0.1s;
+    }
+    .assign-popup-item:hover { background: #f5f5f5; }
+    .assign-popup-item input[type="checkbox"] { margin: 0; cursor: pointer; }
+    .assign-popup-item label { cursor: pointer; flex: 1; }
 
     .task-dates { font-size: 10px; color: #888; font-family: 'SF Mono', Monaco, monospace; cursor: pointer; border-radius: 3px; padding: 2px 4px; margin: -2px -4px; }
     .task-dates:hover { background: #e8f0fe; color: #1a73e8; }
@@ -635,6 +659,7 @@
     // ========== RENDER ==========
     function render() {
       closeDateEditor();
+      if (activeAssignPopup) { activeAssignPopup.popup.remove(); activeAssignPopup = null; document.removeEventListener('mousedown', assignPopupOutsideClick); }
       performAutoRollup();
       calcProjectDates();
       renderTaskList();
@@ -680,7 +705,7 @@
           <span class="drag-handle" onmousedown="startTaskListDrag(event, '${task.id}')">⠿</span>
           <span class="task-wbs">${task.wbs}</span>
           <span class="task-name" data-task-id="${task.id}" style="padding-left:${(task.level - 1) * 12}px"><button class="expand-btn ${task.collapsed ? 'collapsed' : ''} ${!hasChildren ? 'no-children' : ''}" onclick="toggleCollapse('${task.id}', event)">${task.collapsed ? '▶' : '▼'}</button><span class="task-name-text" title="${task.name}">${task.name}</span></span>
-          <span class="task-assigned">${task.assigned || '-'}</span>
+          <span class="task-assigned" onclick="event.stopPropagation();openAssignPopup('${task.id}', this)">${task.assigned || '-'}</span>
           <span class="task-status-cell" onclick="event.stopPropagation()">
             <span class="task-status-dot" style="background:${TASK_STATUSES[task.status || '']?.color || 'transparent'}"></span>
             <select class="task-status-select" onchange="updateTaskStatus('${task.id}', this.value)">
@@ -776,8 +801,9 @@
       const dur = Math.ceil((parseLocalDate(task.end) - parseLocalDate(task.start)) / 864e5) + 1;
       bar.style.left = (startOff * dayWidth) + 'px';
       bar.style.width = (dur * dayWidth - 4) + 'px';
-      const statusStripeHtml = task.statusColor && STATUS_COLOR_PRESETS[task.statusColor]
-        ? `<div class="status-stripe" style="background:${STATUS_COLOR_PRESETS[task.statusColor]}"></div>` : '';
+      const statusDef = TASK_STATUSES[task.status || ''];
+      const stripeColor = (statusDef && statusDef.color) || (task.statusColor && STATUS_COLOR_PRESETS[task.statusColor]) || '';
+      const statusStripeHtml = stripeColor ? `<div class="status-stripe" style="background:${stripeColor}"></div>` : '';
       bar.innerHTML = `${statusStripeHtml}<div class="task-bar-progress" style="width:${task.progress || 0}%"></div><span class="task-bar-label">${task.name}</span>
         <div class="task-bar-resize left"></div><div class="task-bar-resize right"></div>
         <div class="dependency-connector left"></div><div class="dependency-connector right"></div>`;
@@ -1648,6 +1674,71 @@
         activeDatePopup.popup.remove();
         activeDatePopup = null;
         document.removeEventListener('mousedown', dateEditorOutsideClick);
+      }
+    }
+
+    // ========== ASSIGN POPUP ==========
+    let activeAssignPopup = null;
+
+    function openAssignPopup(taskId, el) {
+      closeAssignPopup();
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      // Parse current assigned — support comma-separated multi-assign
+      const current = (task.assigned || '').split(',').map(s => s.trim()).filter(Boolean);
+
+      const rect = el.getBoundingClientRect();
+      const popup = document.createElement('div');
+      popup.className = 'assign-popup';
+      popup.innerHTML = teamMembers.map(m => {
+        const checked = current.includes(m) ? ' checked' : '';
+        return `<div class="assign-popup-item">
+          <input type="checkbox" id="assign_${m}"${checked} data-member="${m}">
+          <label for="assign_${m}">${m}</label>
+        </div>`;
+      }).join('');
+      document.body.appendChild(popup);
+      activeAssignPopup = { popup, taskId };
+
+      // Position below the assigned cell
+      let left = rect.left;
+      let top = rect.bottom + 4;
+      if (left + 170 > window.innerWidth) left = window.innerWidth - 178;
+      if (top + 200 > window.innerHeight) top = rect.top - 200;
+      popup.style.left = left + 'px';
+      popup.style.top = top + 'px';
+
+      // Save on each checkbox change
+      popup.addEventListener('change', () => {
+        const checked = Array.from(popup.querySelectorAll('input[type="checkbox"]:checked'))
+          .map(cb => cb.dataset.member);
+        const t = tasks.find(x => x.id === taskId);
+        if (!t) return;
+        t.assigned = checked.join(', ');
+        saveTaskToDb(t);
+        // Update the cell text without full re-render (which would close popup)
+        const cell = document.querySelector(`.task-row[data-task-id="${taskId}"] .task-assigned`);
+        if (cell) cell.textContent = t.assigned || '-';
+      });
+
+      setTimeout(() => {
+        document.addEventListener('mousedown', assignPopupOutsideClick);
+      }, 0);
+    }
+
+    function assignPopupOutsideClick(e) {
+      if (activeAssignPopup && !activeAssignPopup.popup.contains(e.target)) {
+        closeAssignPopup();
+      }
+    }
+
+    function closeAssignPopup() {
+      if (activeAssignPopup) {
+        activeAssignPopup.popup.remove();
+        activeAssignPopup = null;
+        document.removeEventListener('mousedown', assignPopupOutsideClick);
+        render();
       }
     }
 
