@@ -601,7 +601,6 @@
     }
 
     function setupDataListeners() {
-      let firstLoad = true;
       tasksRef.on('value', (snap) => {
         const data = snap.val();
         if (data) {
@@ -613,7 +612,6 @@
         document.getElementById('loadingOverlay').classList.add('hidden');
         populateTeamDropdown();
         render();
-        if (firstLoad) { firstLoad = false; scrollToTasks(); }
       });
       baselinesRef.on('value', (snap) => {
         const data = snap.val();
@@ -798,26 +796,6 @@
       }
     }
 
-    function scrollToTasks() {
-      const today = new Date(); today.setHours(0,0,0,0);
-      const gc = document.getElementById('ganttBodyContainer');
-      // Find the earliest current/future task, or fall back to the latest task
-      const now = today.getTime();
-      const activeTasks = tasks.filter(t => t.start && t.end && parseLocalDate(t.end).getTime() >= now);
-      let scrollTarget;
-      if (activeTasks.length > 0) {
-        const earliest = activeTasks.reduce((a, b) => parseLocalDate(a.start) < parseLocalDate(b.start) ? a : b);
-        scrollTarget = Math.floor((parseLocalDate(earliest.start) - projectStartDate) / 864e5);
-      } else if (tasks.length > 0) {
-        // All tasks in the past — show the latest ones
-        const latest = tasks.reduce((a, b) => parseLocalDate(a.end) > parseLocalDate(b.end) ? a : b);
-        scrollTarget = Math.floor((parseLocalDate(latest.start) - projectStartDate) / 864e5);
-      } else {
-        scrollTarget = 0;
-      }
-      gc.scrollLeft = Math.max(0, scrollTarget * dayWidth - 50);
-      document.getElementById('ganttHeader').scrollLeft = gc.scrollLeft;
-    }
 
     function createTaskBar(task) {
       const bar = document.createElement('div');
