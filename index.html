@@ -744,13 +744,17 @@
 
     function calcProjectDates() {
       const today = new Date(); today.setHours(0,0,0,0);
-      const dates = tasks.filter(t => t.start && t.end).flatMap(t => [parseLocalDate(t.start), parseLocalDate(t.end)]);
+      const minValid = new Date('2020-01-01'), maxValid = new Date('2040-12-31');
+      const dates = tasks.filter(t => t.start && t.end).flatMap(t => {
+        const s = parseLocalDate(t.start), e = parseLocalDate(t.end);
+        return (s >= minValid && s <= maxValid && e >= minValid && e <= maxValid) ? [s, e] : [];
+      });
       dates.push(today);
       if (dates.length === 0) { projectStartDate = new Date(today); projectEndDate = new Date(today); projectEndDate.setDate(projectEndDate.getDate() + 30); return; }
       projectStartDate = new Date(Math.min(...dates));
       projectEndDate = new Date(Math.max(...dates));
-      projectStartDate.setDate(projectStartDate.getDate() - 5);
-      projectEndDate.setDate(projectEndDate.getDate() + 10);
+      projectStartDate.setDate(projectStartDate.getDate() - 30);
+      projectEndDate.setDate(projectEndDate.getDate() + 30);
     }
 
     function populateTeamDropdown() {
@@ -817,7 +821,7 @@
       const mc = document.getElementById('ganttMonths'), dc = document.getElementById('ganttDays');
       mc.innerHTML = ''; dc.innerHTML = '';
       document.documentElement.style.setProperty('--day-width', dayWidth + 'px');
-      const totalDays = Math.ceil((projectEndDate - projectStartDate) / 864e5);
+      const totalDays = Math.min(Math.ceil((projectEndDate - projectStartDate) / 864e5), 1095);
       const totalWidth = totalDays * dayWidth;
       mc.style.width = totalWidth + 'px';
       dc.style.width = totalWidth + 'px';
@@ -841,7 +845,7 @@
     }
 
     function renderGanttBody() {
-      const c = document.getElementById('ganttBody'), totalDays = Math.ceil((projectEndDate - projectStartDate) / 864e5);
+      const c = document.getElementById('ganttBody'), totalDays = Math.min(Math.ceil((projectEndDate - projectStartDate) / 864e5), 1095);
       const svg = document.getElementById('dependencyLines');
       c.innerHTML = ''; c.appendChild(svg); c.style.width = (totalDays * dayWidth) + 'px';
       getVisibleTasks().forEach(task => {
@@ -1828,7 +1832,9 @@
       function saveDates() {
         const s = startInput.value, e = endInput.value;
         if (!s || !e) return;
-        if (parseLocalDate(s) > parseLocalDate(e)) return;
+        const sp = parseLocalDate(s), ep = parseLocalDate(e);
+        if (sp.getFullYear() < 2020 || sp.getFullYear() > 2040 || ep.getFullYear() < 2020 || ep.getFullYear() > 2040) { alert('Please enter a year between 2020 and 2040.'); return; }
+        if (sp > ep) return;
         const t = tasks.find(x => x.id === taskId);
         if (!t) return;
         if (t.start !== s || t.end !== e) {
