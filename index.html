@@ -153,7 +153,6 @@
     .gantt-row-bg { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; }
     .gantt-cell { min-width: var(--day-width); width: var(--day-width); height: 100%; border-right: 1px solid #f8f8f8; box-sizing: border-box; flex-shrink: 0; }
     .gantt-cell.weekend { background: #fafafa; }
-    .today-line { position: absolute; top: 0; bottom: 0; width: 2px; background: #ea4335; z-index: 50; pointer-events: none; }
     
     .task-bar {
       position: absolute; height: 26px; border-radius: 4px; cursor: move; display: flex; align-items: center;
@@ -878,14 +877,6 @@
         c.appendChild(overlay);
       });
 
-      const today = new Date(); today.setHours(0,0,0,0);
-      if (today >= projectStartDate && today <= projectEndDate) {
-        const todayOffset = Math.floor((today - projectStartDate) / 864e5);
-        const line = document.createElement('div');
-        line.className = 'today-line';
-        line.style.left = (todayOffset * dayWidth + dayWidth / 2) + 'px';
-        c.appendChild(line);
-      }
     }
 
 
