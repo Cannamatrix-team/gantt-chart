@@ -411,7 +411,6 @@
     <button class="toolbar-btn primary" onclick="showAddTaskModal()">➕ Add Task</button>
     <button class="toolbar-btn" onclick="addSubtask()">↳ Subtask</button>
     <div class="toolbar-separator"></div>
-    <button class="toolbar-btn" onclick="recalculateDependencies()">⚡ Recalc Deps</button>
     <button class="toolbar-btn" onclick="expandAll()">⊞ Expand</button>
     <button class="toolbar-btn" onclick="collapseAll()">⊟ Collapse</button>
     <div class="toolbar-separator"></div>
@@ -460,7 +459,7 @@
       <div class="modal-body">
         <input type="hidden" id="taskEditId">
         <div class="form-row">
-          <div class="form-group"><label>WBS Number</label><input type="text" id="taskWbs" placeholder="e.g., 1 or 1.2.3"></div>
+          <div class="form-group"><label>WBS Number</label><input type="text" id="taskWbs" readonly></div>
           <div class="form-group"><label>Assigned To</label><select id="taskAssigned"><option value="">Unassigned</option></select></div>
         </div>
         <div class="form-group"><label>Task Name</label><input type="text" id="taskName" placeholder="Enter task name"></div>
@@ -668,6 +667,21 @@
         if (data) {
           tasks = Object.keys(data).map(key => ({ id: key, ...data[key] }));
           tasks.sort((a, b) => String(a.wbs).localeCompare(String(b.wbs), undefined, { numeric: true }));
+          // Migrate WBS-based dependencies to ID-based
+          const wbsToId = {}; tasks.forEach(t => wbsToId[String(t.wbs)] = t.id);
+          let migrated = false;
+          tasks.forEach(t => {
+            if (!t.dependencies?.length) return;
+            t.dependencies = t.dependencies.map(dep => {
+              if (wbsToId[dep] && !tasks.some(x => x.id === dep)) { migrated = true; return wbsToId[dep]; }
+              return dep;
+            });
+          });
+          if (migrated && tasksRef) {
+            const updates = {};
+            tasks.forEach(t => { const { id, ...d } = t; updates[id] = d; });
+            tasksRef.update(updates);
+          }
         } else {
           tasks = [];
         }
@@ -720,13 +734,13 @@
         { id: 'id1', wbs: '1', name: 'Sprint 7 - RCM Model Foundation', level: 1, assigned: 'Logan', start: '2026-01-27', end: '2026-02-07', duration: 12, progress: 0, dependencies: [], autoRollup: true },
         { id: 'id2', wbs: '1.1', name: 'Complete Davoud Genotyping', level: 2, assigned: 'Kevelin', start: '2026-01-27', end: '2026-01-31', duration: 5, progress: 0, dependencies: [], autoRollup: true },
         { id: 'id3', wbs: '1.1.1', name: 'Run GLIMPSE Pipeline', level: 3, assigned: 'Kevelin', start: '2026-01-27', end: '2026-01-29', duration: 3, progress: 0, dependencies: [], autoRollup: false },
-        { id: 'id4', wbs: '1.1.2', name: 'QC Genotype Results', level: 3, assigned: 'Kevelin', start: '2026-01-30', end: '2026-01-31', duration: 2, progress: 0, dependencies: ['1.1.1'], autoRollup: false },
-        { id: 'id5', wbs: '1.2', name: 'GWAS Filtering Plugin', level: 2, assigned: 'Logan', start: '2026-02-01', end: '2026-02-07', duration: 7, progress: 0, dependencies: ['1.1'], autoRollup: true },
+        { id: 'id4', wbs: '1.1.2', name: 'QC Genotype Results', level: 3, assigned: 'Kevelin', start: '2026-01-30', end: '2026-01-31', duration: 2, progress: 0, dependencies: ['id3'], autoRollup: false },
+        { id: 'id5', wbs: '1.2', name: 'GWAS Filtering Plugin', level: 2, assigned: 'Logan', start: '2026-02-01', end: '2026-02-07', duration: 7, progress: 0, dependencies: ['id2'], autoRollup: true },
         { id: 'id6', wbs: '1.2.1', name: 'Implement Core Logic', level: 3, assigned: 'Logan', start: '2026-02-01', end: '2026-02-04', duration: 4, progress: 0, dependencies: [], autoRollup: false },
-        { id: 'id7', wbs: '1.2.2', name: 'Testing & Validation', level: 3, assigned: 'Sul', start: '2026-02-05', end: '2026-02-07', duration: 3, progress: 0, dependencies: ['1.2.1'], autoRollup: false },
-        { id: 'id8', wbs: '2', name: 'Sprint 8 - Feature Integration', level: 1, assigned: 'Logan', start: '2026-02-10', end: '2026-02-21', duration: 12, progress: 0, dependencies: ['1'], autoRollup: true },
+        { id: 'id7', wbs: '1.2.2', name: 'Testing & Validation', level: 3, assigned: 'Sul', start: '2026-02-05', end: '2026-02-07', duration: 3, progress: 0, dependencies: ['id6'], autoRollup: false },
+        { id: 'id8', wbs: '2', name: 'Sprint 8 - Feature Integration', level: 1, assigned: 'Logan', start: '2026-02-10', end: '2026-02-21', duration: 12, progress: 0, dependencies: ['id1'], autoRollup: true },
         { id: 'id9', wbs: '2.1', name: 'GO2Vec Annotation Features', level: 2, assigned: 'Sul', start: '2026-02-10', end: '2026-02-14', duration: 5, progress: 0, dependencies: [], autoRollup: false },
-        { id: 'id10', wbs: '2.2', name: 'Data Contracts Implementation', level: 2, assigned: 'Logan', start: '2026-02-17', end: '2026-02-21', duration: 5, progress: 0, dependencies: ['2.1'], autoRollup: false }
+        { id: 'id10', wbs: '2.2', name: 'Data Contracts Implementation', level: 2, assigned: 'Logan', start: '2026-02-17', end: '2026-02-21', duration: 5, progress: 0, dependencies: ['id9'], autoRollup: false }
       ];
     }
 
@@ -735,6 +749,7 @@
       closeDateEditor();
       if (activeAssignPopup) { activeAssignPopup.popup.remove(); activeAssignPopup = null; document.removeEventListener('mousedown', assignPopupOutsideClick); }
       performAutoRollup();
+      applyDependencyShifts_();
       calcProjectDates();
       renderTaskList();
       renderGanttHeader();
@@ -935,19 +950,20 @@
       const pos = {};
       visible.forEach((task, i) => {
         const bar = document.querySelector(`.task-bar[data-task-id="${task.id}"]`);
-        if (bar) pos[task.wbs] = { left: parseFloat(bar.style.left), width: parseFloat(bar.style.width), top: rows[i].offsetTop + rows[i].offsetHeight / 2 };
+        if (bar) pos[task.id] = { left: parseFloat(bar.style.left), width: parseFloat(bar.style.width), top: rows[i].offsetTop + rows[i].offsetHeight / 2 };
       });
       visible.forEach(task => {
         if (!task.dependencies?.length) return;
-        const to = pos[task.wbs]; if (!to) return;
-        task.dependencies.forEach(depWbs => {
-          const from = pos[depWbs]; if (!from) return;
+        const to = pos[task.id]; if (!to) return;
+        task.dependencies.forEach(depId => {
+          const from = pos[depId]; if (!from) return;
+          const depTask = tasks.find(t => t.id === depId);
           const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
           const d = `M ${from.left + from.width} ${from.top} C ${(from.left + from.width + to.left) / 2} ${from.top}, ${(from.left + from.width + to.left) / 2} ${to.top}, ${to.left} ${to.top}`;
           path.setAttribute('d', d); path.setAttribute('class', 'dependency-line');
           const hover = document.createElementNS('http://www.w3.org/2000/svg', 'path');
           hover.setAttribute('d', d); hover.setAttribute('class', 'dependency-line-hover-area');
-          hover.addEventListener('click', () => { if (confirm(`Remove dependency ${depWbs} → ${task.wbs}?`)) { task.dependencies = task.dependencies.filter(d => d !== depWbs); saveTaskToDb(task); render(); toast('Dependency removed'); } });
+          hover.addEventListener('click', () => { if (confirm(`Remove dependency ${depTask ? depTask.wbs : depId} → ${task.wbs}?`)) { task.dependencies = task.dependencies.filter(d => d !== depId); saveTaskToDb(task); render(); toast('Dependency removed'); } });
           hover.addEventListener('mouseenter', () => path.style.stroke = '#ea4335');
           hover.addEventListener('mouseleave', () => path.style.stroke = '#666');
           svg.appendChild(path); svg.appendChild(hover);
@@ -1067,8 +1083,8 @@
           const target = tasks.find(t => t.id === targetBar.dataset.taskId);
           if (target) {
             if (!target.dependencies) target.dependencies = [];
-            if (!target.dependencies.includes(dependencyStartTask.wbs)) {
-              target.dependencies.push(dependencyStartTask.wbs);
+            if (!target.dependencies.includes(dependencyStartTask.id)) {
+              target.dependencies.push(dependencyStartTask.id);
               saveTaskToDb(target);
               toast(`Dependency: ${dependencyStartTask.wbs} → ${target.wbs}`, 'info');
               render();
@@ -1086,7 +1102,9 @@
     function showAddTaskModal() {
       document.getElementById('taskModalTitle').textContent = 'Add Task';
       document.getElementById('taskEditId').value = '';
-      document.getElementById('taskWbs').value = '';
+      var maxTop = tasks.filter(function(t) { return String(t.wbs).split('.').length === 1; })
+        .reduce(function(max, t) { return Math.max(max, parseInt(t.wbs, 10) || 0); }, 0);
+      document.getElementById('taskWbs').value = String(maxTop + 1);
       document.getElementById('taskName').value = '';
       document.getElementById('taskAssigned').value = '';
       document.getElementById('taskStart').value = fmtDate(new Date());
@@ -1112,7 +1130,7 @@
       document.getElementById('taskStart').value = t.start;
       document.getElementById('taskEnd').value = t.end;
       document.getElementById('taskProgress').value = t.progress || 0;
-      document.getElementById('taskDependencies').value = (t.dependencies || []).join(', ');
+      document.getElementById('taskDependencies').value = (t.dependencies || []).map(depId => { const dt = tasks.find(x => x.id === depId); return dt ? dt.wbs : depId; }).join(', ');
       document.getElementById('taskAutoRollup').checked = t.autoRollup !== false;
       document.getElementById('taskNotes').value = t.notes || '';
       document.getElementById('deleteTaskBtn').style.display = 'block';
@@ -1136,7 +1154,7 @@
         end: document.getElementById('taskEnd').value,
         duration: Math.ceil((parseLocalDate(document.getElementById('taskEnd').value) - parseLocalDate(document.getElementById('taskStart').value)) / 864e5) + 1,
         progress: parseInt(document.getElementById('taskProgress').value) || 0,
-        dependencies: document.getElementById('taskDependencies').value.split(',').map(d => d.trim()).filter(d => d),
+        dependencies: document.getElementById('taskDependencies').value.split(',').map(d => d.trim()).filter(d => d).map(wbs => { const dt = tasks.find(x => String(x.wbs) === wbs); return dt ? dt.id : wbs; }),
         autoRollup: document.getElementById('taskAutoRollup').checked,
         status: document.getElementById('taskStatus').value || '',
         color: document.getElementById('taskColor').value || null,
@@ -1160,9 +1178,10 @@
     function deleteTask() {
       const id = document.getElementById('taskEditId').value; if (!id) return;
       const t = tasks.find(x => x.id === id); if (!t || !confirm(`Delete "${t.name}"?`)) return;
-      const toDelete = tasks.filter(x => x.wbs === t.wbs || String(x.wbs).startsWith(t.wbs + '.'));
-      tasks = tasks.filter(x => x.wbs !== t.wbs && !String(x.wbs).startsWith(t.wbs + '.'));
-      tasks.forEach(x => { if (x.dependencies) x.dependencies = x.dependencies.filter(d => d !== t.wbs && !String(d).startsWith(t.wbs + '.')); });
+      const deleteIds = new Set(tasks.filter(x => x.wbs === t.wbs || String(x.wbs).startsWith(t.wbs + '.')).map(x => x.id));
+      const toDelete = tasks.filter(x => deleteIds.has(x.id));
+      tasks = tasks.filter(x => !deleteIds.has(x.id));
+      tasks.forEach(x => { if (x.dependencies) x.dependencies = x.dependencies.filter(d => !deleteIds.has(d)); });
       if (tasksRef) {
         const updates = {};
         toDelete.forEach(x => { updates[x.id] = null; });
@@ -1206,9 +1225,10 @@
     function deleteSelectedTask() {
       const id = contextTaskId || selectedTaskId; if (!id) return;
       const t = tasks.find(x => x.id === id); if (!t || !confirm(`Delete "${t.name}"?`)) return;
-      const toDelete = tasks.filter(x => x.wbs === t.wbs || String(x.wbs).startsWith(t.wbs + '.'));
-      tasks = tasks.filter(x => x.wbs !== t.wbs && !String(x.wbs).startsWith(t.wbs + '.'));
-      tasks.forEach(x => { if (x.dependencies) x.dependencies = x.dependencies.filter(d => d !== t.wbs && !String(d).startsWith(t.wbs + '.')); });
+      const deleteIds = new Set(tasks.filter(x => x.wbs === t.wbs || String(x.wbs).startsWith(t.wbs + '.')).map(x => x.id));
+      const toDelete = tasks.filter(x => deleteIds.has(x.id));
+      tasks = tasks.filter(x => !deleteIds.has(x.id));
+      tasks.forEach(x => { if (x.dependencies) x.dependencies = x.dependencies.filter(d => !deleteIds.has(d)); });
       if (tasksRef) {
         const updates = {};
         toDelete.forEach(x => { updates[x.id] = null; });
@@ -1222,15 +1242,15 @@
     function saveTaskToDb(task) { if (tasksRef) { const { id, ...d } = task; tasksRef.child(id).set(d); } }
 
     // ========== DEPENDENCIES ==========
-    function recalculateDependencies() {
-      const map = {}; tasks.forEach(t => map[t.wbs] = t);
-      let changed = true, iter = 0;
+    function applyDependencyShifts_() {
+      const idMap = {}; tasks.forEach(t => idMap[t.id] = t);
+      let anyShifted = false, changed = true, iter = 0;
       while (changed && iter < 100) {
         changed = false; iter++;
         tasks.forEach(task => {
           if (!task.dependencies?.length) return;
           let maxEnd = null;
-          task.dependencies.forEach(dw => { const dt = map[dw]; if (dt?.end) { const de = parseLocalDate(dt.end); if (!maxEnd || de > maxEnd) maxEnd = de; } });
+          task.dependencies.forEach(depId => { const dt = idMap[depId]; if (dt?.end) { const de = parseLocalDate(dt.end); if (!maxEnd || de > maxEnd) maxEnd = de; } });
           if (maxEnd) {
             const newStart = new Date(maxEnd); newStart.setDate(newStart.getDate() + 1);
             if (newStart > parseLocalDate(task.start)) {
@@ -1238,18 +1258,19 @@
               const newEnd = new Date(newStart); newEnd.setDate(newEnd.getDate() + (task.duration || 1) - 1);
               task.end = fmtDate(newEnd);
               changed = true;
+              anyShifted = true;
             }
           }
         });
       }
-      if (tasksRef) {
+      if (anyShifted && tasksRef) {
         const updates = {};
         tasks.forEach(t => { const { id, ...d } = t; updates[id] = d; });
         tasksRef.update(updates);
       }
-      render();
-      toast(`Dependencies recalculated (${iter} passes)`);
+      return anyShifted;
     }
+    function recalculateDependencies() { applyDependencyShifts_(); render(); toast('Dependencies recalculated'); }
 
     // ========== AUTO ROLLUP ==========
     function performAutoRollup() {
@@ -1547,22 +1568,6 @@
 
       roots.forEach((root, i) => assignWbs(root, String(i + 1)));
 
-      // Build old->new WBS mapping for dependency updates
-      const wbsRemap = {};
-      tasks.forEach(t => {
-        const oldW = oldWbsMap[t.id];
-        if (oldW !== String(t.wbs)) wbsRemap[oldW] = String(t.wbs);
-      });
-
-      // Update dependencies
-      if (Object.keys(wbsRemap).length > 0) {
-        tasks.forEach(t => {
-          if (t.dependencies && t.dependencies.length) {
-            t.dependencies = t.dependencies.map(d => wbsRemap[d] || d);
-          }
-        });
-      }
-
       // Re-sort
       tasks.sort((a, b) => String(a.wbs).localeCompare(String(b.wbs), undefined, { numeric: true }));
 
@@ -1729,11 +1734,10 @@
     function quickDeleteTask(id) {
       const t = tasks.find(x => x.id === id);
       if (!t || !confirm(`Delete "${t.name}"?`)) return;
-      const toDelete = tasks.filter(x => x.wbs === t.wbs || String(x.wbs).startsWith(t.wbs + '.'));
-      tasks = tasks.filter(x => x.wbs !== t.wbs && !String(x.wbs).startsWith(t.wbs + '.'));
-      tasks.forEach(x => {
-        if (x.dependencies) x.dependencies = x.dependencies.filter(d => d !== t.wbs && !String(d).startsWith(t.wbs + '.'));
-      });
+      const deleteIds = new Set(tasks.filter(x => x.wbs === t.wbs || String(x.wbs).startsWith(t.wbs + '.')).map(x => x.id));
+      const toDelete = tasks.filter(x => deleteIds.has(x.id));
+      tasks = tasks.filter(x => !deleteIds.has(x.id));
+      tasks.forEach(x => { if (x.dependencies) x.dependencies = x.dependencies.filter(d => !deleteIds.has(d)); });
       recalculateWBS(true);
       if (tasksRef) {
         const updates = {};
@@ -2181,11 +2185,6 @@
     }
 
     function rebuildAllWbs() {
-      // Save old WBS for dependency remapping
-      const oldWbs = {};
-      tasks.forEach(t => { oldWbs[t.id] = String(t.wbs); });
-
-      // Counter-stack: walk tasks in order, assign WBS from levels
       const counters = [];
       tasks.forEach(t => {
         const level = t.level || 1;
@@ -2194,19 +2193,6 @@
         counters[level - 1]++;
         t.wbs = counters.join('.');
       });
-
-      // Remap dependencies from old WBS to new WBS
-      const remap = {};
-      tasks.forEach(t => {
-        if (oldWbs[t.id] !== String(t.wbs)) remap[oldWbs[t.id]] = String(t.wbs);
-      });
-      if (Object.keys(remap).length > 0) {
-        tasks.forEach(t => {
-          if (t.dependencies && t.dependencies.length) {
-            t.dependencies = t.dependencies.map(d => remap[d] || d);
-          }
-        });
-      }
     }
 
     // ========== QUICK ADD ROW ==========
