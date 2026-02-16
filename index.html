@@ -455,6 +455,7 @@
     <button class="toolbar-btn" onclick="saveBaseline()">💾 Baseline</button>
     <div class="baseline-selector">
       <select id="baselineSelect" onchange="toggleBaseline(this.value)"><option value="">No Baseline</option></select>
+      <button class="toolbar-btn" id="deleteBaselineBtn" onclick="deleteBaseline()" style="display:none;padding:4px 8px;font-size:12px;" title="Delete this baseline">✕</button>
     </div>
     <div class="toolbar-separator"></div>
     <button class="toolbar-btn" onclick="showTeamModal()">👥 Team</button>
@@ -773,14 +774,13 @@
         const data = snap.val();
         if (data && typeof data === 'object') {
           TASK_STATUSES = data;
-          // Ensure empty status always exists
           if (!TASK_STATUSES['']) TASK_STATUSES[''] = { label: '-', color: '' };
         }
-        render();
-        // Re-render settings list if modal is open
+        // Update settings list FIRST (instant) so modal feels responsive, then heavy render
         if (document.getElementById('settingsModal').classList.contains('visible')) {
           renderSettingsStatusList();
         }
+        render();
       });
     }
 
@@ -1444,9 +1444,31 @@
     function updateBaselineSelector() {
       const s = document.getElementById('baselineSelect');
       s.innerHTML = '<option value="">No Baseline</option>' + baselines.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
-      if (activeBaseline) s.value = activeBaseline.id;
+      if (activeBaseline && baselines.some(b => b.id === activeBaseline.id)) {
+        s.value = activeBaseline.id;
+      } else {
+        activeBaseline = null;
+        s.value = '';
+      }
+      document.getElementById('deleteBaselineBtn').style.display = activeBaseline ? '' : 'none';
     }
-    function toggleBaseline(id) { activeBaseline = id ? baselines.find(b => b.id === id) : null; render(); }
+    function toggleBaseline(id) {
+      activeBaseline = id ? baselines.find(b => b.id === id) : null;
+      document.getElementById('deleteBaselineBtn').style.display = id ? '' : 'none';
+      render();
+    }
+    function deleteBaseline() {
+      if (!activeBaseline) return;
+      if (!confirm(`Are you sure you want to delete baseline "${activeBaseline.name}"?`)) return;
+      const id = activeBaseline.id;
+      if (baselinesRef) baselinesRef.child(id).remove();
+      else baselines = baselines.filter(b => b.id !== id);
+      activeBaseline = null;
+      document.getElementById('deleteBaselineBtn').style.display = 'none';
+      updateBaselineSelector();
+      render();
+      toast('Baseline deleted');
+    }
 
     // ========== ZOOM ==========
     function zoomIn() { if (zoomLevel >= 200) return; zoomLevel += 25; dayWidth = 30 * zoomLevel / 100; document.getElementById('zoomLabel').textContent = zoomLevel + '%'; render(); }
@@ -1723,8 +1745,10 @@
 
     function removeStatus(key) {
       if (!TASK_STATUSES[key]) return;
-      if (!confirm(`Remove status "${TASK_STATUSES[key].label}"? Tasks with this status will be reset to "-".`)) return;
+      if (!confirm(`Are you sure you want to delete status "${TASK_STATUSES[key].label}"? Tasks with this status will be reset to "-".`)) return;
       delete TASK_STATUSES[key];
+      // Update the modal list immediately so deletion feels instant
+      renderSettingsStatusList();
       // Reset tasks that had this status
       tasks.forEach(t => {
         if (t.status === key) {
@@ -1733,7 +1757,6 @@
         }
       });
       saveStatusSettings();
-      renderSettingsStatusList();
       render();
       toast('Status removed');
     }
