@@ -191,6 +191,7 @@
     
     .dependency-lines { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
     .dependency-line { stroke: #666; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+    .dependency-line-inherited { stroke: #999; stroke-width: 1.5; fill: none; stroke-dasharray: 4,3; marker-end: url(#arrowhead-inherited); }
     .dependency-line-hover-area { stroke: transparent; stroke-width: 15; fill: none; pointer-events: stroke; cursor: pointer; }
     .temp-dependency-line { stroke: #1a73e8; stroke-width: 2; stroke-dasharray: 5,5; fill: none; pointer-events: none; }
     .baseline-bar { position: absolute; height: 8px; background: #ccc; border-radius: 2px; opacity: 0.6; z-index: 5; top: calc(50% + 12px); transform: translateY(-50%); border: 1px dashed #999; }
@@ -446,7 +447,7 @@
       <div class="gantt-body-container" id="ganttBodyContainer">
         <div class="gantt-body" id="ganttBody">
           <svg class="dependency-lines" id="dependencyLines">
-            <defs><marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#666"/></marker></defs>
+            <defs><marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#666"/></marker><marker id="arrowhead-inherited" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#999"/></marker></defs>
           </svg>
         </div>
       </div>
@@ -967,6 +968,37 @@
           hover.addEventListener('mouseenter', () => path.style.stroke = '#ea4335');
           hover.addEventListener('mouseleave', () => path.style.stroke = '#666');
           svg.appendChild(path); svg.appendChild(hover);
+        });
+      });
+      // Inherited dependency lines: dotted arrows from parent deps to visible subtasks
+      visible.forEach(task => {
+        if (!task.dependencies?.length) return;
+        const parentPos = pos[task.id]; if (!parentPos) return;
+        const parentWbs = String(task.wbs);
+        const children = visible.filter(t => String(t.wbs).startsWith(parentWbs + '.') && String(t.wbs).split('.').length === parentWbs.split('.').length + 1);
+        const visibleChildren = children.filter(c => pos[c.id]);
+        if (!visibleChildren.length) return;
+        task.dependencies.forEach(depId => {
+          if (!pos[depId]) return;
+          const branchX = parentPos.left - 20;
+          const branchY = parentPos.top;
+          const lastChildY = pos[visibleChildren[visibleChildren.length - 1].id].top;
+          // Vertical trunk from branch point down to last subtask
+          if (visibleChildren.length > 1 || branchY !== lastChildY) {
+            const trunk = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            trunk.setAttribute('d', `M ${branchX} ${branchY} L ${branchX} ${lastChildY}`);
+            trunk.setAttribute('class', 'dependency-line-inherited');
+            trunk.style.markerEnd = 'none';
+            svg.appendChild(trunk);
+          }
+          // Horizontal dotted line to each subtask
+          visibleChildren.forEach(child => {
+            const childPos = pos[child.id];
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            line.setAttribute('d', `M ${branchX} ${childPos.top} L ${childPos.left} ${childPos.top}`);
+            line.setAttribute('class', 'dependency-line-inherited');
+            svg.appendChild(line);
+          });
         });
       });
     }
