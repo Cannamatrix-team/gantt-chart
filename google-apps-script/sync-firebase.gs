@@ -33,6 +33,7 @@ function syncFromFirebase() {
   syncTasks_();
   syncSprints_();
   syncCalendar_();
+  syncDoc_();
   stampLastSynced_();
 }
 
@@ -169,6 +170,157 @@ function compareWbs_(a, b) {
     if (na !== nb) return na - nb;
   }
   return 0;
+}
+
+// ── Google Doc Sync ──────────────────────────────────────
+
+/**
+ * Sync tasks and sprints to a Google Doc so Claude AI can read project status.
+ * Creates the doc on first run and stores its ID in script properties.
+ */
+function syncDoc_() {
+  var tasks   = fetchJson_(FIREBASE_BASE + '/tasks.json') || {};
+  var sprints = fetchJson_(FIREBASE_BASE + '/sprints.json') || {};
+  var settings = fetchJson_(FIREBASE_BASE + '/settings.json') || {};
+  var statusDefs = (settings && settings.statuses) || STATUS_LABELS;
+
+  var doc = getOrCreateDoc_();
+  var body = doc.getBody();
+  body.clear();
+
+  var now = new Date().toLocaleString('en-US', { timeZone: 'America/New_York' });
+  body.appendParagraph('Cannamatrix Gantt Chart — Project Status')
+      .setHeading(DocumentApp.ParagraphHeading.HEADING1);
+  body.appendParagraph('Auto-synced from Firebase every 5 minutes. Last updated: ' + now)
+      .setItalic(true);
+  body.appendParagraph('');
+
+  // ── Tasks ──
+  var taskKeys = Object.keys(tasks);
+  var rows = [];
+  var idToWbs = {};
+  for (var k = 0; k < taskKeys.length; k++) {
+    idToWbs[taskKeys[k]] = tasks[taskKeys[k]].wbs || '';
+  }
+  for (var i = 0; i < taskKeys.length; i++) {
+    var t = tasks[taskKeys[i]];
+    var deps = '';
+    if (Array.isArray(t.dependencies)) {
+      deps = t.dependencies.map(function(d) { return idToWbs[d] || d; }).join(', ');
+    }
+    rows.push({
+      wbs:      t.wbs || '',
+      name:     t.name || '',
+      level:    t.level || String(t.wbs || '').split('.').length,
+      status:   resolveStatusLabel_(t.status, statusDefs),
+      assigned: t.assigned || '',
+      start:    t.start || '',
+      end:      t.end || '',
+      duration: t.duration != null ? t.duration : '',
+      progress: t.progress != null ? t.progress : 0,
+      deps:     deps
+    });
+  }
+  rows.sort(compareWbs_);
+
+  body.appendParagraph('Tasks').setHeading(DocumentApp.ParagraphHeading.HEADING2);
+
+  if (rows.length === 0) {
+    body.appendParagraph('No tasks defined.');
+  } else {
+    for (var j = 0; j < rows.length; j++) {
+      var r = rows[j];
+      var indent = '';
+      for (var d = 1; d < r.level; d++) indent += '    ';
+      var line = indent + r.wbs + '  ' + r.name;
+      var para = body.appendParagraph(line);
+      para.setBold(r.level === 1);
+
+      var details = [];
+      if (r.status) details.push('Status: ' + r.status);
+      if (r.assigned) details.push('Assigned: ' + r.assigned);
+      details.push('Dates: ' + r.start + ' → ' + r.end);
+      if (r.duration) details.push('Duration: ' + r.duration + 'd');
+      details.push('Progress: ' + r.progress + '%');
+      if (r.deps) details.push('Depends on: ' + r.deps);
+
+      var detailPara = body.appendParagraph(indent + '    ' + details.join('  |  '));
+      detailPara.setFontSize(9);
+      detailPara.setForegroundColor('#666666');
+    }
+  }
+
+  body.appendParagraph('');
+
+  // ── Sprints ──
+  body.appendParagraph('Sprints').setHeading(DocumentApp.ParagraphHeading.HEADING2);
+  var sprintKeys = Object.keys(sprints);
+  if (sprintKeys.length === 0) {
+    body.appendParagraph('No sprints defined.');
+  } else {
+    var sprintRows = [];
+    for (var si = 0; si < sprintKeys.length; si++) {
+      var s = sprints[sprintKeys[si]];
+      sprintRows.push({ name: s.name || '', start: s.start || '', end: s.end || '' });
+    }
+    sprintRows.sort(function(a, b) { return a.start < b.start ? -1 : a.start > b.start ? 1 : 0; });
+    for (var sj = 0; sj < sprintRows.length; sj++) {
+      var sp = sprintRows[sj];
+      body.appendParagraph(sp.name + '    ' + sp.start + ' → ' + sp.end);
+    }
+  }
+
+  // ── Summary stats ──
+  body.appendParagraph('');
+  body.appendParagraph('Summary').setHeading(DocumentApp.ParagraphHeading.HEADING2);
+  var totalTasks = rows.length;
+  var completedCount = 0, inProgressCount = 0, blockedCount = 0, atRiskCount = 0;
+  for (var ci = 0; ci < rows.length; ci++) {
+    var st = rows[ci].status.toLowerCase();
+    if (st === 'complete') completedCount++;
+    else if (st === 'in progress') inProgressCount++;
+    else if (st === 'blocked') blockedCount++;
+    else if (st === 'at risk') atRiskCount++;
+  }
+  body.appendParagraph('Total tasks: ' + totalTasks);
+  body.appendParagraph('Completed: ' + completedCount + '  |  In Progress: ' + inProgressCount +
+    '  |  Blocked: ' + blockedCount + '  |  At Risk: ' + atRiskCount);
+
+  doc.saveAndClose();
+}
+
+/**
+ * Resolve a status key to its display label.
+ */
+function resolveStatusLabel_(statusKey, statusDefs) {
+  if (!statusKey) return '';
+  if (statusDefs && statusDefs[statusKey] && statusDefs[statusKey].label) {
+    return statusDefs[statusKey].label;
+  }
+  if (STATUS_LABELS[statusKey]) return STATUS_LABELS[statusKey];
+  return statusKey;
+}
+
+/**
+ * Get or create the "Cannamatrix Gantt — Status" Google Doc.
+ * Stores the doc ID in script properties for reuse.
+ */
+function getOrCreateDoc_() {
+  var props = PropertiesService.getScriptProperties();
+  var docId = props.getProperty('GANTT_DOC_ID');
+
+  if (docId) {
+    try {
+      return DocumentApp.openById(docId);
+    } catch (e) {
+      // Doc was deleted or inaccessible, create a new one
+    }
+  }
+
+  var newDoc = DocumentApp.create('Cannamatrix Gantt — Project Status');
+  props.setProperty('GANTT_DOC_ID', newDoc.getId());
+  Logger.log('Created status doc: ' + newDoc.getUrl());
+  return newDoc;
 }
 
 // ── Calendar Sync ────────────────────────────────────────
