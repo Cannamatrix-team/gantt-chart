@@ -1284,7 +1284,7 @@
           let maxEnd = null;
           task.dependencies.forEach(depId => { const dt = idMap[depId]; if (dt?.end) { const de = parseLocalDate(dt.end); if (!maxEnd || de > maxEnd) maxEnd = de; } });
           if (maxEnd) {
-            const newStart = new Date(maxEnd); newStart.setDate(newStart.getDate() + 1);
+            const newStart = new Date(maxEnd);
             if (newStart > parseLocalDate(task.start)) {
               task.start = fmtDate(newStart);
               const newEnd = new Date(newStart); newEnd.setDate(newEnd.getDate() + (task.duration || 1) - 1);
