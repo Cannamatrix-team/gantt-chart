@@ -378,6 +378,28 @@
     .quick-add-input:focus { border: 1px solid #1a73e8; border-style: solid; }
     .quick-add-input::placeholder { color: #aaa; }
 
+    .hidden-tasks-drawer { border-top: 1px solid #e0e0e0; background: #f8f8f8; }
+    .hidden-tasks-toggle {
+      display: flex; align-items: center; gap: 6px; padding: 8px 12px; cursor: pointer;
+      font-size: 12px; font-weight: 500; color: #666; user-select: none;
+    }
+    .hidden-tasks-toggle:hover { background: #f0f0f0; }
+    .hidden-tasks-toggle .chevron { font-size: 10px; transition: transform 0.15s; }
+    .hidden-tasks-toggle .chevron.open { transform: rotate(90deg); }
+    .hidden-tasks-list { padding: 0 8px 8px; }
+    .hidden-task-item {
+      display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 4px;
+      font-size: 12px; color: #666;
+    }
+    .hidden-task-item:hover { background: #ececec; }
+    .hidden-task-item .hidden-task-wbs { font-family: 'SF Mono', Monaco, monospace; font-size: 11px; color: #888; min-width: 30px; }
+    .hidden-task-item .hidden-task-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .hidden-task-item .hidden-task-show {
+      background: none; border: 1px solid #ccc; border-radius: 4px; padding: 2px 8px;
+      font-size: 11px; color: #555; cursor: pointer; flex-shrink: 0;
+    }
+    .hidden-task-item .hidden-task-show:hover { background: #e8f0fe; border-color: #1a73e8; color: #1a73e8; }
+
     .color-swatch-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
     .color-swatch {
       width: 28px; height: 28px; border-radius: 6px; cursor: pointer; border: 2px solid transparent;
@@ -499,6 +521,7 @@
     <div class="task-panel" id="taskPanel">
       <div class="task-header"><span></span><span class="task-header-cell">WBS<div class="col-resize-handle" data-col="wbs"></div></span><span class="task-header-cell">Task Name<div class="col-resize-handle" data-col="name"></div></span><span class="task-header-cell">Assigned<div class="col-resize-handle" data-col="assigned"></div></span><span class="task-header-cell">Status<div class="col-resize-handle" data-col="status"></div></span><span class="task-header-cell">Dates<div class="col-resize-handle" data-col="dates"></div></span></div>
       <div class="task-list" id="taskList"></div>
+      <div class="hidden-tasks-drawer" id="hiddenTasksDrawer" style="display:none"></div>
     </div>
     <div class="gantt-panel">
       <div class="gantt-header" id="ganttHeader">
@@ -536,6 +559,7 @@
         <div class="form-row">
           <div class="form-group"><label>Status</label><select id="taskStatus"></select></div>
           <div class="form-group"><div class="form-checkbox" style="margin-top:22px"><input type="checkbox" id="taskAutoRollup" checked><label for="taskAutoRollup">Auto Rollup (parent spans children)</label></div></div>
+          <div class="form-group" id="taskHiddenGroup" style="display:none"><div class="form-checkbox" style="margin-top:22px"><input type="checkbox" id="taskHidden"><label for="taskHidden">Hide from view</label></div></div>
         </div>
         <div class="form-group"><label>Bar Color</label><div class="color-swatch-row" id="barColorSwatches"></div><input type="hidden" id="taskColor"></div>
         <div class="form-group"><label>Status Indicator</label><div class="status-swatch-row" id="statusColorSwatches"></div><input type="hidden" id="taskStatusColor"></div>
@@ -875,7 +899,10 @@
 
     function getVisibleTasks() {
       const collapsedWbsSet = new Set(tasks.filter(t => collapsedIds.has(t.id)).map(t => String(t.wbs)));
+      const hiddenTopWbs = new Set(tasks.filter(t => t.level === 1 && t.hidden).map(t => String(t.wbs)));
       return tasks.filter(task => {
+        const topWbs = String(task.wbs).split('.')[0];
+        if (hiddenTopWbs.has(topWbs)) return false;
         const parts = String(task.wbs).split('.');
         for (let i = 1; i < parts.length; i++) { if (collapsedWbsSet.has(parts.slice(0, i).join('.'))) return false; }
         return true;
@@ -926,6 +953,7 @@
         c.appendChild(row);
       });
       renderQuickAddRow(c);
+      renderHiddenTasksDrawer();
     }
 
     function renderGanttHeader() {
@@ -1241,6 +1269,8 @@
       document.getElementById('taskAutoRollup').checked = true;
       document.getElementById('taskNotes').value = '';
       document.getElementById('deleteTaskBtn').style.display = 'none';
+      document.getElementById('taskHidden').checked = false;
+      document.getElementById('taskHiddenGroup').style.display = 'none';
       populateStatusDropdown('');
       renderBarColorSwatches('');
       renderStatusColorSwatches('');
@@ -1261,6 +1291,8 @@
       document.getElementById('taskAutoRollup').checked = t.autoRollup !== false;
       document.getElementById('taskNotes').value = t.notes || '';
       document.getElementById('deleteTaskBtn').style.display = 'block';
+      document.getElementById('taskHidden').checked = t.hidden || false;
+      document.getElementById('taskHiddenGroup').style.display = t.level === 1 ? '' : 'none';
       populateStatusDropdown(t.status || '');
       renderBarColorSwatches(t.color || '');
       renderStatusColorSwatches(t.statusColor || '');
@@ -1286,7 +1318,8 @@
         status: document.getElementById('taskStatus').value || '',
         color: document.getElementById('taskColor').value || null,
         statusColor: document.getElementById('taskStatusColor').value || null,
-        notes: document.getElementById('taskNotes').value
+        notes: document.getElementById('taskNotes').value,
+        hidden: document.getElementById('taskHidden').checked || false
       };
       if (editId) {
         const t = tasks.find(x => x.id === editId);
@@ -2466,6 +2499,34 @@
     }
 
     // ========== QUICK ADD ROW ==========
+    let hiddenDrawerOpen = false;
+    function renderHiddenTasksDrawer() {
+      const drawer = document.getElementById('hiddenTasksDrawer');
+      const hiddenTasks = tasks.filter(t => t.level === 1 && t.hidden);
+      if (hiddenTasks.length === 0) { drawer.style.display = 'none'; drawer.innerHTML = ''; return; }
+      drawer.style.display = '';
+      drawer.innerHTML = `
+        <div class="hidden-tasks-toggle" onclick="hiddenDrawerOpen=!hiddenDrawerOpen;renderHiddenTasksDrawer()">
+          <span class="chevron ${hiddenDrawerOpen ? 'open' : ''}">▶</span>
+          Hidden (${hiddenTasks.length})
+        </div>
+        ${hiddenDrawerOpen ? `<div class="hidden-tasks-list">${hiddenTasks.map(t => `
+          <div class="hidden-task-item">
+            <span class="hidden-task-wbs">${t.wbs}</span>
+            <span class="hidden-task-name" title="${t.name}">${t.name}</span>
+            <button class="hidden-task-show" onclick="unhideTask('${t.id}')">Show</button>
+          </div>`).join('')}</div>` : ''}`;
+    }
+
+    function unhideTask(id) {
+      const t = tasks.find(x => x.id === id);
+      if (!t) return;
+      t.hidden = false;
+      saveTaskToDb(t);
+      render();
+      toast('Task unhidden');
+    }
+
     function renderQuickAddRow(container) {
       const row = document.createElement('div');
       row.className = 'quick-add-row';
