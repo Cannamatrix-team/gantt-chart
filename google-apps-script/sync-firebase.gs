@@ -35,9 +35,9 @@ var STATUS_CALENDAR_COLORS = {
   'Blocked':        CalendarApp.EventColor.MAUVE
 };
 
-var TASK_HEADERS = ['WBS', 'Level', 'Name', 'Status', 'Assigned', 'Start', 'End', 'Duration (days)', 'Progress (%)', 'Dependencies', 'Auto Rollup', 'Notes'];
+var TASK_HEADERS = ['WBS', 'Level', 'Name', 'Status', 'Assigned', 'Start', 'End', 'Duration (days)', 'Dependencies', 'Auto Rollup', 'Notes'];
 var SPRINT_HEADERS = ['Name', 'Start', 'End', 'Color'];
-var BASELINE_HEADERS = ['Baseline', 'Saved', 'WBS', 'Name', 'Start', 'End', 'Progress (%)'];
+var BASELINE_HEADERS = ['Baseline', 'Saved', 'WBS', 'Name', 'Start', 'End'];
 var TEAM_HEADERS = ['Name'];
 
 /**
@@ -126,7 +126,6 @@ function buildTaskRows_(data, statusDefs) {
       start:      t.start || '',
       end:        t.end || '',
       duration:   t.duration != null ? t.duration : '',
-      progress:   t.progress != null ? t.progress : 0,
       deps:       deps,
       autoRollup: t.autoRollup !== false ? 'Yes' : 'No',
       notes:      t.notes || ''
@@ -150,7 +149,7 @@ function syncTasksSheet_(data) {
   var output = [TASK_HEADERS];
   for (var j = 0; j < rows.length; j++) {
     var r = rows[j];
-    output.push([r.wbs, r.level, r.name, r.status, r.assigned, r.start, r.end, r.duration, r.progress, r.deps, r.autoRollup, r.notes]);
+    output.push([r.wbs, r.level, r.name, r.status, r.assigned, r.start, r.end, r.duration, r.deps, r.autoRollup, r.notes]);
   }
 
   sheet.getRange(1, 1, output.length, output[0].length).setValues(output);
@@ -208,8 +207,7 @@ function syncBaselinesSheet_(data) {
         bt.wbs || '',
         bt.name || '',
         bt.start || '',
-        bt.end || '',
-        bt.progress != null ? bt.progress : ''
+        bt.end || ''
       ]);
     }
   }
@@ -302,7 +300,6 @@ function syncDoc_(data) {
       if (r.assigned) details.push('Assigned: ' + r.assigned);
       details.push(r.start + ' → ' + r.end);
       if (r.duration) details.push(r.duration + 'd');
-      details.push(r.progress + '% complete');
       if (r.deps) details.push('Depends on: ' + r.deps);
       if (r.autoRollup === 'Yes' && r.level === 1) details.push('Auto rollup');
 
@@ -358,8 +355,7 @@ function syncDoc_(data) {
       for (var bj = 0; bj < blTasks.length; bj++) {
         var bt = blTasks[bj];
         var blLine = (bt.wbs || '') + '  ' + (bt.name || '') + '    ' +
-          (bt.start || '') + ' → ' + (bt.end || '') +
-          (bt.progress != null ? '  (' + bt.progress + '%)' : '');
+          (bt.start || '') + ' → ' + (bt.end || '');
         var blPara = body.appendParagraph('    ' + blLine);
         blPara.setFontSize(10);
         blPara.setForegroundColor('#555555');
@@ -400,20 +396,6 @@ function syncDoc_(data) {
   }
   if (countParts.length) {
     body.appendParagraph('Leaf task statuses: ' + countParts.join('  |  '));
-  }
-
-  // Overall progress of leaf tasks
-  var totalProgress = 0;
-  for (var pi = 0; pi < rows.length; pi++) {
-    // Use same leaf detection
-    var isPar = false;
-    for (var pk = 0; pk < rows.length; pk++) {
-      if (pk !== pi && rows[pk].wbs.indexOf(rows[pi].wbs + '.') === 0) { isPar = true; break; }
-    }
-    if (!isPar) totalProgress += rows[pi].progress;
-  }
-  if (leafCount > 0) {
-    body.appendParagraph('Average leaf task progress: ' + Math.round(totalProgress / leafCount) + '%');
   }
 
   // Assignee workload
@@ -503,7 +485,6 @@ function syncCalendar_(data) {
     var status = resolveStatus_(t.status, data.statusDefs);
     var calBody = 'Status: ' + status +
       '\nAssigned: ' + (t.assigned || '') +
-      '\nProgress: ' + (t.progress != null ? t.progress + '%' : '') +
       (t.notes ? '\nNotes: ' + t.notes : '') +
       '\n\n[firebase:' + tag + ']';
     var color = STATUS_CALENDAR_COLORS[status] || CalendarApp.EventColor.PALE_BLUE;
