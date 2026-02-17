@@ -887,9 +887,11 @@
     }
 
     // ========== RENDER ==========
+    let _pendingAutoUpdates = null;
     function render() {
       if (isRendering) return;
       isRendering = true;
+      _pendingAutoUpdates = {};
       try {
         closeDateEditor();
         if (activeAssignPopup) { activeAssignPopup.popup.remove(); activeAssignPopup = null; document.removeEventListener('mousedown', assignPopupOutsideClick); }
@@ -902,6 +904,12 @@
         renderDependencyLines();
       } finally {
         isRendering = false;
+      }
+      // Batch-write rollup/shift changes AFTER render to avoid sync callback cascade
+      const updates = _pendingAutoUpdates;
+      _pendingAutoUpdates = null;
+      if (updates && Object.keys(updates).length && tasksRef) {
+        tasksRef.update(updates);
       }
     }
 
@@ -1470,7 +1478,15 @@
         tasks.forEach(task => {
           if (!task.dependencies?.length) return;
           let maxEnd = null;
-          task.dependencies.forEach(depId => { const dt = idMap[depId]; if (dt?.end) { const de = parseLocalDate(dt.end); if (!maxEnd || de > maxEnd) maxEnd = de; } });
+          const taskWbs = String(task.wbs);
+          task.dependencies.forEach(depId => {
+            const dt = idMap[depId]; if (!dt?.end) return;
+            // Skip ancestor dependencies — they create infinite shift cycles with rollup
+            const depWbs = String(dt.wbs);
+            if (taskWbs.startsWith(depWbs + '.')) return;
+            const de = parseLocalDate(dt.end);
+            if (!maxEnd || de > maxEnd) maxEnd = de;
+          });
           if (maxEnd) {
             const newStart = new Date(maxEnd);
             if (newStart > parseLocalDate(task.start)) {
@@ -1483,14 +1499,18 @@
           }
         });
       }
-      if (anyShifted && tasksRef) {
-        const updates = {};
-        tasks.forEach(t => { const { id, ...d } = t; updates[id] = d; });
-        tasksRef.update(updates);
+      if (anyShifted && _pendingAutoUpdates) {
+        tasks.forEach(t => { const { id, ...d } = t; _pendingAutoUpdates[id] = d; });
       }
       return anyShifted;
     }
-    function recalculateDependencies() { applyDependencyShifts_(); render(); toast('Dependencies recalculated'); }
+    function recalculateDependencies() {
+      _pendingAutoUpdates = {};
+      applyDependencyShifts_();
+      const updates = _pendingAutoUpdates; _pendingAutoUpdates = null;
+      if (updates && Object.keys(updates).length && tasksRef) tasksRef.update(updates);
+      render(); toast('Dependencies recalculated');
+    }
 
     // ========== AUTO ROLLUP ==========
     function performAutoRollup() {
@@ -1532,16 +1552,16 @@
           }
         });
       }
-      // Persist rolled-up changes to Firebase so other clients see them
-      if (changed.length && tasksRef) {
-        const updates = {};
+      // Queue rolled-up changes for batch write after render
+      if (changed.length) {
         changed.forEach(t => {
-          updates[t.id + '/start'] = t.start;
-          updates[t.id + '/end'] = t.end;
-          updates[t.id + '/duration'] = t.duration;
-          updates[t.id + '/progress'] = t.progress;
+          if (_pendingAutoUpdates) {
+            _pendingAutoUpdates[t.id + '/start'] = t.start;
+            _pendingAutoUpdates[t.id + '/end'] = t.end;
+            _pendingAutoUpdates[t.id + '/duration'] = t.duration;
+            _pendingAutoUpdates[t.id + '/progress'] = t.progress;
+          }
         });
-        tasksRef.update(updates);
       }
     }
 
