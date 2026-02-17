@@ -323,6 +323,17 @@
     .task-row.temp-hidden .temp-hide-cb { opacity: 1; }
     .task-row.temp-hidden { opacity: 0.35; }
     .gantt-row.temp-hidden { display: none; }
+    .drag-guide-line {
+      position: absolute; top: 0; width: 1px; pointer-events: none; z-index: 50;
+      border-left: 1px dashed rgba(26,115,232,0.5);
+    }
+    .drag-guide-line.end { border-left-color: rgba(26,115,232,0.35); }
+    .drag-date-tooltip {
+      position: absolute; z-index: 60; pointer-events: none;
+      background: #1a1d23; color: white; padding: 4px 8px; border-radius: 4px;
+      font-size: 11px; font-family: 'SF Mono', Monaco, monospace; white-space: nowrap;
+      transform: translateX(-50%); box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+    }
     .toolbar-btn.active-filter { background: rgba(251,188,4,0.25); color: #fbbc04; }
     .toolbar-btn.active-filter:hover { background: rgba(251,188,4,0.35); }
     .task-row.dragging { opacity: 0.25; pointer-events: none; }
@@ -1202,6 +1213,33 @@
     function startDepDrag(e, task) { if (e.button !== 0) return; e.preventDefault(); e.stopPropagation(); isDragging = true; dragType = 'dependency'; dependencyStartTask = task; const bar = document.querySelector(`.task-bar[data-task-id="${task.id}"]`), rect = bar.getBoundingClientRect(); const line = document.getElementById('tempDependencyLine'); line.style.display = 'block'; line.setAttribute('x1', rect.right); line.setAttribute('y1', rect.top + rect.height / 2); line.setAttribute('x2', e.clientX); line.setAttribute('y2', e.clientY); }
     function cancelDepDrag() { if (dragType === 'dependency') { document.getElementById('tempDependencyLine').style.display = 'none'; isDragging = false; dragType = null; dependencyStartTask = null; } }
 
+    function showDragGuides(bar, startDate, endDate) {
+      const body = document.getElementById('ganttBody');
+      const startOff = Math.floor((startDate - projectStartDate) / 864e5) * dayWidth;
+      const endOff = (Math.floor((endDate - projectStartDate) / 864e5) + 1) * dayWidth;
+      let startLine = document.getElementById('dragGuideStart');
+      let endLine = document.getElementById('dragGuideEnd');
+      let tooltip = document.getElementById('dragDateTooltip');
+      if (!startLine) {
+        startLine = document.createElement('div'); startLine.id = 'dragGuideStart'; startLine.className = 'drag-guide-line';
+        endLine = document.createElement('div'); endLine.id = 'dragGuideEnd'; endLine.className = 'drag-guide-line end';
+        tooltip = document.createElement('div'); tooltip.id = 'dragDateTooltip'; tooltip.className = 'drag-date-tooltip';
+        body.appendChild(startLine); body.appendChild(endLine); body.appendChild(tooltip);
+      }
+      startLine.style.left = startOff + 'px'; startLine.style.height = body.scrollHeight + 'px';
+      endLine.style.left = endOff + 'px'; endLine.style.height = body.scrollHeight + 'px';
+      const barLeft = parseFloat(bar.style.left) || 0;
+      const barWidth = parseFloat(bar.style.width) || 0;
+      tooltip.style.left = (barLeft + barWidth / 2) + 'px';
+      tooltip.style.top = (parseFloat(bar.closest('.gantt-row')?.offsetTop) - 22) + 'px';
+      const s = startDate, ed = endDate;
+      const dur = Math.ceil((ed - s) / 864e5) + 1;
+      tooltip.textContent = `${s.getMonth()+1}/${s.getDate()}/${s.getFullYear()} – ${ed.getMonth()+1}/${ed.getDate()}/${ed.getFullYear()}  (${dur}d)`;
+    }
+    function hideDragGuides() {
+      ['dragGuideStart', 'dragGuideEnd', 'dragDateTooltip'].forEach(id => document.getElementById(id)?.remove());
+    }
+
     function handleMouseMove(e) {
       if (!isDragging || !dragTask && dragType !== 'dependency') return;
       const bar = dragTask ? document.querySelector(`.task-bar[data-task-id="${dragTask.id}"]`) : null;
@@ -1211,6 +1249,7 @@
         const newEnd = new Date(dragEndDate); newEnd.setDate(newEnd.getDate() + delta);
         bar.style.left = (Math.floor((newStart - projectStartDate) / 864e5) * dayWidth) + 'px';
         dragOriginalStart = newStart; dragOriginalEnd = newEnd;
+        showDragGuides(bar, newStart, newEnd);
       } else if (dragType === 'resize-left' && bar) {
         const delta = Math.round((e.clientX - dragStartX) / dayWidth);
         const newStart = new Date(dragStartDate); newStart.setDate(newStart.getDate() + delta);
@@ -1219,6 +1258,7 @@
         bar.style.left = (Math.floor((newStart - projectStartDate) / 864e5) * dayWidth) + 'px';
         bar.style.width = (dur * dayWidth - 4) + 'px';
         dragOriginalStart = newStart;
+        showDragGuides(bar, newStart, parseLocalDate(dragTask.end));
       } else if (dragType === 'resize-right' && bar) {
         const delta = Math.round((e.clientX - dragStartX) / dayWidth);
         const newEnd = new Date(dragEndDate); newEnd.setDate(newEnd.getDate() + delta);
@@ -1226,6 +1266,7 @@
         const dur = Math.ceil((newEnd - parseLocalDate(dragTask.start)) / 864e5) + 1;
         bar.style.width = (dur * dayWidth - 4) + 'px';
         dragOriginalEnd = newEnd;
+        showDragGuides(bar, parseLocalDate(dragTask.start), newEnd);
       } else if (dragType === 'dependency') {
         const line = document.getElementById('tempDependencyLine');
         line.setAttribute('x2', e.clientX); line.setAttribute('y2', e.clientY);
@@ -1234,6 +1275,7 @@
 
     function handleMouseUp(e) {
       if (!isDragging) return;
+      hideDragGuides();
       if ((dragType === 'move' || dragType?.startsWith('resize')) && dragTask) {
         document.querySelector(`.task-bar[data-task-id="${dragTask.id}"]`)?.classList.remove('dragging');
         // Only save if the bar was actually moved or resized
