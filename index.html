@@ -320,7 +320,9 @@
     .temp-hide-cb { width: 11px; height: 11px; cursor: pointer; accent-color: #1a73e8; margin: 0; flex-shrink: 0; opacity: 0; transition: opacity 0.15s; }
     .task-row:hover .temp-hide-cb { opacity: 0.5; }
     .task-row .temp-hide-cb:checked { opacity: 1; }
-    .task-row.temp-hidden, .gantt-row.temp-hidden { display: none; }
+    .task-row.temp-hidden .temp-hide-cb { opacity: 1; }
+    .task-row.temp-hidden { opacity: 0.35; }
+    .gantt-row.temp-hidden { display: none; }
     .toolbar-btn.active-filter { background: rgba(251,188,4,0.25); color: #fbbc04; }
     .toolbar-btn.active-filter:hover { background: rgba(251,188,4,0.35); }
     .task-row.dragging { opacity: 0.25; pointer-events: none; }
