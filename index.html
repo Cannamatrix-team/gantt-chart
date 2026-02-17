@@ -681,6 +681,7 @@
     let collapsedIds = new Set();
     let tempHiddenIds = new Set();
     let selectedTaskId = null, contextTaskId = null;
+    let isRendering = false;
     let teamMembers = ['Logan', 'Manny', 'Kevelin', 'Sul'];
     let onlineUsers = {};
     let currentUser = { id: null, name: null, color: null };
@@ -779,6 +780,7 @@
     let initialLoadDone = false;
     function setupDataListeners() {
       tasksRef.on('value', (snap) => {
+        if (isRendering) return;
         const data = snap.val();
         if (data) {
           tasks = Object.keys(data).map(key => ({ id: key, ...data[key] }));
@@ -874,15 +876,21 @@
 
     // ========== RENDER ==========
     function render() {
-      closeDateEditor();
-      if (activeAssignPopup) { activeAssignPopup.popup.remove(); activeAssignPopup = null; document.removeEventListener('mousedown', assignPopupOutsideClick); }
-      performAutoRollup();
-      applyDependencyShifts_();
-      calcProjectDates();
-      renderTaskList();
-      renderGanttHeader();
-      renderGanttBody();
-      renderDependencyLines();
+      if (isRendering) return;
+      isRendering = true;
+      try {
+        closeDateEditor();
+        if (activeAssignPopup) { activeAssignPopup.popup.remove(); activeAssignPopup = null; document.removeEventListener('mousedown', assignPopupOutsideClick); }
+        performAutoRollup();
+        applyDependencyShifts_();
+        calcProjectDates();
+        renderTaskList();
+        renderGanttHeader();
+        renderGanttBody();
+        renderDependencyLines();
+      } finally {
+        isRendering = false;
+      }
     }
 
     function calcProjectDates() {
