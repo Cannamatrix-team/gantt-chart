@@ -780,7 +780,6 @@
     let initialLoadDone = false;
     function setupDataListeners() {
       tasksRef.on('value', (snap) => {
-        if (isRendering) return;
         const data = snap.val();
         if (data) {
           tasks = Object.keys(data).map(key => ({ id: key, ...data[key] }));
@@ -1086,13 +1085,12 @@
     }
 
     function renderDependencyLines() {
-      const svg = document.getElementById('dependencyLines'), visible = getVisibleTasks();
+      const svg = document.getElementById('dependencyLines'), visible = getVisibleTasks(), rows = document.querySelectorAll('.gantt-row');
       svg.querySelectorAll('path').forEach(el => el.remove());
       const pos = {};
-      visible.forEach((task) => {
+      visible.forEach((task, i) => {
         const bar = document.querySelector(`.task-bar[data-task-id="${task.id}"]`);
-        const row = document.querySelector(`.gantt-row[data-task-id="${task.id}"]`);
-        if (bar && row && !row.classList.contains('temp-hidden')) pos[task.id] = { left: parseFloat(bar.style.left), width: parseFloat(bar.style.width), top: row.offsetTop + row.offsetHeight / 2 };
+        if (bar && rows[i] && !rows[i].classList.contains('temp-hidden')) pos[task.id] = { left: parseFloat(bar.style.left), width: parseFloat(bar.style.width), top: rows[i].offsetTop + rows[i].offsetHeight / 2 };
       });
       visible.forEach(task => {
         if (!task.dependencies?.length) return;
