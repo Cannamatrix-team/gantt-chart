@@ -312,11 +312,17 @@
     .task-action-btn.danger:hover { background: #fce8e6; color: #ea4335; }
 
     .drag-handle {
-      display: flex; align-items: center; justify-content: center;
-      cursor: grab; color: #aaa; font-size: 14px; user-select: none; width: 100%; height: 100%;
-      opacity: 0; transition: opacity 0.15s;
+      display: flex; align-items: center; justify-content: center; gap: 2px;
+      color: #aaa; font-size: 14px; user-select: none; width: 100%; height: 100%;
     }
-    .task-row:hover .drag-handle { opacity: 1; }
+    .drag-handle .grip { cursor: grab; opacity: 0; transition: opacity 0.15s; }
+    .task-row:hover .drag-handle .grip { opacity: 1; }
+    .temp-hide-cb { width: 11px; height: 11px; cursor: pointer; accent-color: #1a73e8; margin: 0; flex-shrink: 0; opacity: 0; transition: opacity 0.15s; }
+    .task-row:hover .temp-hide-cb { opacity: 0.5; }
+    .task-row .temp-hide-cb:checked { opacity: 1; }
+    .task-row.temp-hidden, .gantt-row.temp-hidden { display: none; }
+    .toolbar-btn.active-filter { background: rgba(251,188,4,0.25); color: #fbbc04; }
+    .toolbar-btn.active-filter:hover { background: rgba(251,188,4,0.35); }
     .task-row.dragging { opacity: 0.25; pointer-events: none; }
 
     .drag-floating-ghost {
@@ -492,6 +498,7 @@
     <div class="toolbar-group">
       <button class="toolbar-btn" onclick="expandAll()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><polyline points="3,6 8,11 13,6"/></svg>Expand</button>
       <button class="toolbar-btn" onclick="collapseAll()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><polyline points="3,11 8,6 13,11"/></svg>Collapse</button>
+      <button class="toolbar-btn" id="showAllBtn" onclick="clearTempHidden()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M1 8s3-5 7-5 7 5 7 5-3 5-7 5-7-5-7-5z"/><circle cx="8" cy="8" r="2"/></svg>Show All</button>
     </div>
     <div class="toolbar-group">
       <button class="toolbar-btn" onclick="showSprintModal()">Sprints</button>
@@ -672,6 +679,7 @@
     let tasks = [], baselines = [], activeBaseline = null;
     let sprints = [], activeSprintIds = new Set();
     let collapsedIds = new Set();
+    let tempHiddenIds = new Set();
     let selectedTaskId = null, contextTaskId = null;
     let teamMembers = ['Logan', 'Manny', 'Kevelin', 'Sul'];
     let onlineUsers = {};
@@ -917,8 +925,9 @@
         const row = document.createElement('div');
         row.className = `task-row level-${task.level}${task.id === selectedTaskId ? ' selected' : ''}`;
         row.dataset.taskId = task.id;
+        if (tempHiddenIds.has(task.id)) row.classList.add('temp-hidden');
         row.innerHTML = `
-          <span class="drag-handle" onmousedown="startTaskListDrag(event, '${task.id}')">⠿</span>
+          <span class="drag-handle"><input type="checkbox" class="temp-hide-cb" title="Temporarily hide" ${tempHiddenIds.has(task.id) ? 'checked' : ''} onclick="event.stopPropagation();toggleTempHide('${task.id}', this.checked)"><span class="grip" onmousedown="startTaskListDrag(event, '${task.id}')">⠿</span></span>
           <span class="task-wbs">${task.wbs}</span>
           <span class="task-name" data-task-id="${task.id}" style="padding-left:${(task.level - 1) * 12}px"><button class="expand-btn ${collapsedIds.has(task.id) ? 'collapsed' : ''} ${!hasChildren ? 'no-children' : ''}" onclick="toggleCollapse('${task.id}', event)">${collapsedIds.has(task.id) ? '▶' : '▼'}</button><span class="task-name-text" title="${task.name}">${task.name}</span></span>
           <span class="task-assigned" onclick="event.stopPropagation();openAssignPopup('${task.id}', this)">${task.assigned || '-'}</span>
@@ -937,7 +946,7 @@
             <button class="task-action-btn danger" onclick="event.stopPropagation();quickDeleteTask('${task.id}')" title="Delete">×</button>
           </div>`;
         row.addEventListener('click', (e) => {
-          if (e.target.classList.contains('expand-btn') || e.target.classList.contains('task-action-btn') || e.target.classList.contains('drag-handle')) return;
+          if (e.target.classList.contains('expand-btn') || e.target.classList.contains('task-action-btn') || e.target.classList.contains('drag-handle') || e.target.classList.contains('temp-hide-cb') || e.target.classList.contains('grip')) return;
           if (e.target.classList.contains('task-name') || e.target.closest('.task-name')) {
             startInlineEdit(task.id); return;
           }
@@ -989,7 +998,7 @@
       c.innerHTML = ''; c.appendChild(svg); c.style.width = (totalDays * dayWidth) + 'px';
       getVisibleTasks().forEach(task => {
         const row = document.createElement('div');
-        row.className = 'gantt-row';
+        row.className = 'gantt-row' + (tempHiddenIds.has(task.id) ? ' temp-hidden' : '');
         row.dataset.taskId = task.id;
         const bg = document.createElement('div'); bg.className = 'gantt-row-bg';
         let cur = new Date(projectStartDate);
@@ -1069,12 +1078,13 @@
     }
 
     function renderDependencyLines() {
-      const svg = document.getElementById('dependencyLines'), visible = getVisibleTasks(), rows = document.querySelectorAll('.gantt-row');
+      const svg = document.getElementById('dependencyLines'), visible = getVisibleTasks();
       svg.querySelectorAll('path').forEach(el => el.remove());
       const pos = {};
-      visible.forEach((task, i) => {
+      visible.forEach((task) => {
         const bar = document.querySelector(`.task-bar[data-task-id="${task.id}"]`);
-        if (bar) pos[task.id] = { left: parseFloat(bar.style.left), width: parseFloat(bar.style.width), top: rows[i].offsetTop + rows[i].offsetHeight / 2 };
+        const row = document.querySelector(`.gantt-row[data-task-id="${task.id}"]`);
+        if (bar && row && !row.classList.contains('temp-hidden')) pos[task.id] = { left: parseFloat(bar.style.left), width: parseFloat(bar.style.width), top: row.offsetTop + row.offsetHeight / 2 };
       });
       visible.forEach(task => {
         if (!task.dependencies?.length) return;
@@ -1488,6 +1498,25 @@
     // ========== COLLAPSE/EXPAND ==========
     function expandAll() { collapsedIds.clear(); render(); }
     function collapseAll() { collapsedIds.clear(); tasks.forEach(t => { if (tasks.some(c => c.wbs !== t.wbs && String(c.wbs).startsWith(t.wbs + '.'))) collapsedIds.add(t.id); }); render(); }
+
+    // ========== TEMP HIDE ==========
+    function toggleTempHide(id, checked) {
+      if (checked) {
+        tempHiddenIds.add(id);
+        document.querySelectorAll(`.task-row[data-task-id="${id}"]`).forEach(el => el.classList.add('temp-hidden'));
+        document.querySelectorAll(`.gantt-row[data-task-id="${id}"]`).forEach(el => el.classList.add('temp-hidden'));
+      } else {
+        tempHiddenIds.delete(id);
+        document.querySelectorAll(`.task-row[data-task-id="${id}"]`).forEach(el => el.classList.remove('temp-hidden'));
+        document.querySelectorAll(`.gantt-row[data-task-id="${id}"]`).forEach(el => el.classList.remove('temp-hidden'));
+      }
+      updateShowAllBtn();
+    }
+    function clearTempHidden() { tempHiddenIds.clear(); render(); updateShowAllBtn(); }
+    function updateShowAllBtn() {
+      const btn = document.getElementById('showAllBtn');
+      if (btn) { if (tempHiddenIds.size > 0) { btn.classList.add('active-filter'); btn.textContent = `Show All (${tempHiddenIds.size})`; } else { btn.classList.remove('active-filter'); btn.textContent = 'Show All'; } }
+    }
 
     // ========== BASELINES ==========
     function saveBaseline() {
