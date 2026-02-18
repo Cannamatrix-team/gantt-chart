@@ -116,6 +116,10 @@
       height: 24px; max-width: 105px; box-sizing: border-box;
     }
     .task-status-cell:hover { border-color: #1a73e8; background: #e8f0fe; }
+    .task-status-cell.rollup { cursor: default; background: #ebebeb; }
+    .task-status-cell.rollup:hover { border-color: #e0e0e0; background: #ebebeb; }
+    .task-status-cell.rollup::after { display: none; }
+    .task-status-cell.rollup .task-status-select { cursor: default; color: #999; }
     .task-status-select {
       font-size: 11px; border: none; background: transparent; color: #555; cursor: pointer;
       padding: 2px 18px 2px 18px; outline: none; width: 100%; height: 100%;
@@ -984,9 +988,9 @@
           <span class="task-wbs">${task.wbs}</span>
           <span class="task-name" data-task-id="${task.id}" style="padding-left:${(task.level - 1) * 12}px"><button class="expand-btn ${collapsedIds.has(task.id) ? 'collapsed' : ''} ${!hasChildren ? 'no-children' : ''}" onclick="toggleCollapse('${task.id}', event)">${collapsedIds.has(task.id) ? '▶' : '▼'}</button><span class="task-name-text" title="${task.name}">${task.name}</span></span>
           <span class="task-assigned" onclick="event.stopPropagation();openAssignPopup('${task.id}', this)">${task.assigned || '-'}</span>
-          <span class="task-status-cell" onclick="event.stopPropagation()">
+          <span class="task-status-cell${hasChildren ? ' rollup' : ''}" onclick="event.stopPropagation()">
             <span class="task-status-dot" style="background:${TASK_STATUSES[task.status || '']?.color || 'transparent'}"></span>
-            <select class="task-status-select" onchange="updateTaskStatus('${task.id}', this.value)">
+            <select class="task-status-select" onchange="updateTaskStatus('${task.id}', this.value)"${hasChildren ? ' disabled' : ''}>
               ${Object.entries(TASK_STATUSES).map(([k, v]) => `<option value="${k}"${(task.status || '') === k ? ' selected' : ''}>${v.label}</option>`).join('')}
             </select>
           </span>
@@ -1379,6 +1383,7 @@
       document.getElementById('taskHidden').checked = false;
       document.getElementById('taskHiddenGroup').style.display = 'none';
       populateStatusDropdown('');
+      document.getElementById('taskStatus').disabled = false;
       renderBarColorSwatches('');
       document.getElementById('taskModal').classList.add('visible');
     }
@@ -1400,6 +1405,8 @@
       document.getElementById('taskHidden').checked = t.hidden || false;
       document.getElementById('taskHiddenGroup').style.display = t.level === 1 ? '' : 'none';
       populateStatusDropdown(t.status || '');
+      const isParent = tasks.some(c => c.wbs !== t.wbs && String(c.wbs).startsWith(t.wbs + '.'));
+      document.getElementById('taskStatus').disabled = isParent;
       renderBarColorSwatches(t.color || '');
       document.getElementById('taskModal').classList.add('visible');
     }
