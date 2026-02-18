@@ -718,6 +718,7 @@
       { key: 'dates', label: 'Dates', alwaysOn: false }
     ];
     let hiddenColumns = new Set();
+    let _lastEditedTaskId = null;
 
     const BAR_COLOR_PRESETS = {
       blue:   { gradient: 'linear-gradient(135deg, #7baaf0 0%, #a0c4f7 100%)' },
@@ -1317,6 +1318,7 @@
             if (dragOriginalStart) tasks[idx].start = fmtDate(dragOriginalStart);
             if (dragOriginalEnd) tasks[idx].end = fmtDate(dragOriginalEnd);
             tasks[idx].duration = Math.ceil((parseLocalDate(tasks[idx].end) - parseLocalDate(tasks[idx].start)) / 864e5) + 1;
+            _lastEditedTaskId = tasks[idx].id;
             saveTaskToDb(tasks[idx]);
             toast('Task updated');
           }
@@ -1498,7 +1500,7 @@
         changed = false; iter++;
         tasks.forEach(task => {
           if (!task.dependencies?.length) return;
-          let maxEnd = null;
+          let maxEnd = null, blockingDep = null;
           const taskWbs = String(task.wbs);
           task.dependencies.forEach(depId => {
             const dt = idMap[depId]; if (!dt?.end) return;
@@ -1506,11 +1508,15 @@
             const depWbs = String(dt.wbs);
             if (taskWbs.startsWith(depWbs + '.')) return;
             const de = parseLocalDate(dt.end);
-            if (!maxEnd || de > maxEnd) maxEnd = de;
+            if (!maxEnd || de > maxEnd) { maxEnd = de; blockingDep = dt; }
           });
           if (maxEnd) {
             const newStart = new Date(maxEnd);
             if (newStart > parseLocalDate(task.start)) {
+              if (_lastEditedTaskId === task.id && blockingDep) {
+                setTimeout(() => toast(`Blocked by ${blockingDep.wbs} "${blockingDep.name}" (ends ${fmtDateShort(blockingDep.end)})`, 'info'), 50);
+                _lastEditedTaskId = null;
+              }
               task.start = fmtDate(newStart);
               const newEnd = new Date(newStart); newEnd.setDate(newEnd.getDate() + (task.duration || 1) - 1);
               task.end = fmtDate(newEnd);
@@ -1520,6 +1526,7 @@
           }
         });
       }
+      _lastEditedTaskId = null;
       if (anyShifted && _pendingAutoUpdates) {
         tasks.forEach(t => { const { id, ...d } = t; _pendingAutoUpdates[id] = d; });
       }
@@ -2306,6 +2313,7 @@
           t.start = s;
           t.end = e;
           t.duration = Math.ceil((parseLocalDate(e) - parseLocalDate(s)) / 864e5) + 1;
+          _lastEditedTaskId = taskId;
           saveTaskToDb(t);
           render();
         }
