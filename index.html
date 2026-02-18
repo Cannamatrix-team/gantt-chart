@@ -2368,8 +2368,10 @@
         }
       }
 
-      startInput.addEventListener('change', saveDates);
-      endInput.addEventListener('change', saveDates);
+      function onEnter(e) { if (e.key === 'Enter') { saveDates(); closeDateEditor(); } }
+      startInput.addEventListener('keydown', onEnter);
+      endInput.addEventListener('keydown', onEnter);
+      activeDatePopup.saveDates = saveDates;
 
       // Close when clicking outside
       setTimeout(() => {
@@ -2387,6 +2389,7 @@
 
     function closeDateEditor() {
       if (activeDatePopup) {
+        if (activeDatePopup.saveDates) activeDatePopup.saveDates();
         activeDatePopup.popup.remove();
         activeDatePopup = null;
         document.removeEventListener('mousedown', dateEditorOutsideClick);
