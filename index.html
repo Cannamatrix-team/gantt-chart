@@ -743,6 +743,7 @@
       if (!name) { alert('Please enter your name'); return; }
       currentUser = { name, id: 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9), color: userColors[Math.floor(Math.random() * userColors.length)] };
       loadTempHidden();
+      loadActiveSprints();
       document.getElementById('nameModal').style.opacity = '0';
       document.getElementById('nameModal').style.visibility = 'hidden';
       document.getElementById('loadingOverlay').classList.remove('hidden');
@@ -1731,6 +1732,7 @@
       const s = sprints.find(x => x.id === id);
       if (!s || !confirm(`Delete sprint "${s.name}"?`)) return;
       activeSprintIds.delete(id);
+      saveActiveSprints();
       if (sprintsRef) {
         sprintsRef.child(id).remove();
       } else {
@@ -1741,12 +1743,16 @@
       toast('Sprint deleted');
     }
 
+    function sprintSelStorageKey() { return 'gantt_activeSprints_' + (currentUser.name || ''); }
+    function saveActiveSprints() { try { localStorage.setItem(sprintSelStorageKey(), JSON.stringify([...activeSprintIds])); } catch(e) {} }
+    function loadActiveSprints() { try { const d = localStorage.getItem(sprintSelStorageKey()); if (d) { activeSprintIds = new Set(JSON.parse(d)); } } catch(e) {} }
     function toggleSprintHighlight(id) {
       if (activeSprintIds.has(id)) {
         activeSprintIds.delete(id);
       } else {
         activeSprintIds.add(id);
       }
+      saveActiveSprints();
       render();
     }
 
