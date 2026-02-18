@@ -326,7 +326,8 @@
     .task-row .temp-hide-cb:checked { opacity: 1; }
     .task-row.temp-hidden .temp-hide-cb { opacity: 1; }
     .task-row.temp-hidden { opacity: 0.35; }
-    .gantt-row.temp-hidden { display: none; }
+    .gantt-row.temp-hidden .task-bar { visibility: hidden; }
+    .gantt-row.temp-hidden .baseline-bar { visibility: hidden; }
     .drag-guide-line {
       position: absolute; top: 0; width: 1px; pointer-events: none; z-index: 50;
       border-left: 1px dashed rgba(26,115,232,0.5);
@@ -1116,13 +1117,13 @@
       const pos = {};
       visible.forEach((task, i) => {
         const bar = document.querySelector(`.task-bar[data-task-id="${task.id}"]`);
-        if (bar && rows[i] && !rows[i].classList.contains('temp-hidden')) pos[task.id] = { left: parseFloat(bar.style.left), width: parseFloat(bar.style.width), top: rows[i].offsetTop + rows[i].offsetHeight / 2 };
+        if (bar && rows[i]) pos[task.id] = { left: parseFloat(bar.style.left), width: parseFloat(bar.style.width), top: rows[i].offsetTop + rows[i].offsetHeight / 2, hidden: tempHiddenIds.has(task.id) };
       });
       visible.forEach(task => {
         if (!task.dependencies?.length) return;
-        const to = pos[task.id]; if (!to) return;
+        const to = pos[task.id]; if (!to || to.hidden) return;
         task.dependencies.forEach(depId => {
-          const from = pos[depId]; if (!from) return;
+          const from = pos[depId]; if (!from || from.hidden) return;
           const depTask = tasks.find(t => t.id === depId);
           const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
           const d = `M ${from.left + from.width} ${from.top} C ${(from.left + from.width + to.left) / 2} ${from.top}, ${(from.left + from.width + to.left) / 2} ${to.top}, ${to.left} ${to.top}`;
@@ -1138,10 +1139,10 @@
       // Inherited dependency lines: dotted arrows from parent deps to visible subtasks
       visible.forEach(task => {
         if (!task.dependencies?.length) return;
-        const parentPos = pos[task.id]; if (!parentPos) return;
+        const parentPos = pos[task.id]; if (!parentPos || parentPos.hidden) return;
         const parentWbs = String(task.wbs);
         const children = visible.filter(t => String(t.wbs).startsWith(parentWbs + '.') && String(t.wbs).split('.').length === parentWbs.split('.').length + 1);
-        const visibleChildren = children.filter(c => pos[c.id]);
+        const visibleChildren = children.filter(c => pos[c.id] && !pos[c.id].hidden);
         if (!visibleChildren.length) return;
         task.dependencies.forEach(depId => {
           if (!pos[depId]) return;
