@@ -752,6 +752,7 @@
       const name = document.getElementById('userName').value.trim();
       if (!name) { alert('Please enter your name'); return; }
       currentUser = { name, id: 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9), color: userColors[Math.floor(Math.random() * userColors.length)] };
+      loadTempHidden();
       document.getElementById('nameModal').style.opacity = '0';
       document.getElementById('nameModal').style.visibility = 'hidden';
       document.getElementById('loadingOverlay').classList.remove('hidden');
@@ -1582,6 +1583,9 @@
     function collapseAll() { collapsedIds.clear(); tasks.forEach(t => { if (tasks.some(c => c.wbs !== t.wbs && String(c.wbs).startsWith(t.wbs + '.'))) collapsedIds.add(t.id); }); render(); }
 
     // ========== TEMP HIDE ==========
+    function tempHideStorageKey() { return 'gantt_tempHidden_' + (currentUser.name || ''); }
+    function saveTempHidden() { try { localStorage.setItem(tempHideStorageKey(), JSON.stringify([...tempHiddenIds])); } catch(e) {} }
+    function loadTempHidden() { try { const d = localStorage.getItem(tempHideStorageKey()); if (d) { tempHiddenIds = new Set(JSON.parse(d)); } } catch(e) {} }
     function toggleTempHide(id, checked) {
       if (checked) {
         tempHiddenIds.add(id);
@@ -1592,10 +1596,11 @@
         document.querySelectorAll(`.task-row[data-task-id="${id}"]`).forEach(el => el.classList.remove('temp-hidden'));
         document.querySelectorAll(`.gantt-row[data-task-id="${id}"]`).forEach(el => el.classList.remove('temp-hidden'));
       }
+      saveTempHidden();
       renderDependencyLines();
       updateShowAllBtn();
     }
-    function clearTempHidden() { tempHiddenIds.clear(); render(); updateShowAllBtn(); }
+    function clearTempHidden() { tempHiddenIds.clear(); saveTempHidden(); render(); updateShowAllBtn(); }
     function updateShowAllBtn() {
       const btn = document.getElementById('showAllBtn');
       if (btn) { if (tempHiddenIds.size > 0) { btn.classList.add('active-filter'); btn.textContent = `Show All (${tempHiddenIds.size})`; } else { btn.classList.remove('active-filter'); btn.textContent = 'Show All'; } }
