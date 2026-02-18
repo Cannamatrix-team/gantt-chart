@@ -587,7 +587,6 @@
           <div class="form-group" id="taskHiddenGroup" style="display:none"><div class="form-checkbox" style="margin-top:22px"><input type="checkbox" id="taskHidden"><label for="taskHidden">Hide from view</label></div></div>
         </div>
         <div class="form-group"><label>Bar Color</label><div class="color-swatch-row" id="barColorSwatches"></div><input type="hidden" id="taskColor"></div>
-        <div class="form-group"><label>Status Indicator</label><div class="status-swatch-row" id="statusColorSwatches"></div><input type="hidden" id="taskStatusColor"></div>
         <div class="form-group"><label>Notes</label><textarea id="taskNotes" rows="2" placeholder="Optional notes"></textarea></div>
       </div>
       <div class="modal-footer">
@@ -1085,7 +1084,7 @@
       bar.style.left = (startOff * dayWidth) + 'px';
       bar.style.width = (dur * dayWidth - 4) + 'px';
       const statusDef = TASK_STATUSES[task.status || ''];
-      const stripeColor = (statusDef && statusDef.color) || (task.statusColor && STATUS_COLOR_PRESETS[task.statusColor]) || '';
+      const stripeColor = (statusDef && statusDef.color) || '';
       const statusStripeHtml = stripeColor ? `<div class="status-stripe" style="background:${stripeColor}"></div>` : '';
       const assignees = (task.assigned || '').split(',').map(s => s.trim()).filter(Boolean);
       const avatarsHtml = assignees.map(name => {
@@ -1354,7 +1353,6 @@
       document.getElementById('taskHiddenGroup').style.display = 'none';
       populateStatusDropdown('');
       renderBarColorSwatches('');
-      renderStatusColorSwatches('');
       document.getElementById('taskModal').classList.add('visible');
     }
 
@@ -1376,7 +1374,6 @@
       document.getElementById('taskHiddenGroup').style.display = t.level === 1 ? '' : 'none';
       populateStatusDropdown(t.status || '');
       renderBarColorSwatches(t.color || '');
-      renderStatusColorSwatches(t.statusColor || '');
       document.getElementById('taskModal').classList.add('visible');
     }
 
@@ -1398,7 +1395,6 @@
         autoRollup: document.getElementById('taskAutoRollup').checked,
         status: document.getElementById('taskStatus').value || '',
         color: document.getElementById('taskColor').value || null,
-        statusColor: document.getElementById('taskStatusColor').value || null,
         notes: document.getElementById('taskNotes').value,
         hidden: document.getElementById('taskHidden').checked || false
       };
