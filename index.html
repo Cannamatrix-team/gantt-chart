@@ -169,6 +169,7 @@
     .gantt-day-letter { font-size: 8px; color: #999; text-transform: uppercase; font-weight: 500; }
     .gantt-day.weekend { background: #f5f5f5; color: #999; }
     .gantt-day.today { background: #fff3e0; color: #e65100; font-weight: 600; }
+    .today-line { position: absolute; top: 0; bottom: 0; width: 2px; background: #ea4335; z-index: 11; pointer-events: none; }
     .gantt-body-container { flex: 1; overflow: auto; position: relative; }
     .gantt-body { position: relative; min-height: 100%; }
     .gantt-row { height: 41px; display: flex; align-items: center; border-bottom: 1px solid #f0f0f0; position: relative; }
@@ -1093,6 +1094,16 @@
         overlay.style.borderColor = hex;
         c.appendChild(overlay);
       });
+
+      // Today line
+      const todayDate = new Date(); todayDate.setHours(0,0,0,0);
+      const todayOff = Math.floor((todayDate - projectStartDate) / 864e5);
+      if (todayOff >= 0 && todayOff <= totalDays) {
+        const line = document.createElement('div');
+        line.className = 'today-line';
+        line.style.left = (todayOff * dayWidth + dayWidth / 2) + 'px';
+        c.appendChild(line);
+      }
 
     }
 
