@@ -465,6 +465,14 @@
     .columns-list li:hover { background: #f8f9fa; }
     .columns-list li input[type="checkbox"] { accent-color: #1a73e8; width: 16px; height: 16px; cursor: pointer; }
     .columns-list li label { cursor: pointer; flex: 1; }
+    .task-panel.hide-col-wbs .task-wbs,
+    .task-panel.hide-col-wbs .task-header-cell[data-col="wbs"],
+    .task-panel.hide-col-assigned .task-assigned,
+    .task-panel.hide-col-assigned .task-header-cell[data-col="assigned"],
+    .task-panel.hide-col-status .task-status-cell,
+    .task-panel.hide-col-status .task-header-cell[data-col="status"],
+    .task-panel.hide-col-dates .task-dates,
+    .task-panel.hide-col-dates .task-header-cell[data-col="dates"] { overflow: hidden; visibility: hidden; padding: 0 !important; margin: 0; }
     .settings-status-list { list-style: none; margin: 0 0 12px 0; padding: 0; }
     .settings-status-list li {
       display: flex; align-items: center; gap: 10px; padding: 8px 12px;
@@ -557,7 +565,7 @@
   
   <div class="main-container">
     <div class="task-panel" id="taskPanel">
-      <div class="task-header"><span></span><span class="task-header-cell">WBS<div class="col-resize-handle" data-col="wbs"></div></span><span class="task-header-cell">Task Name<div class="col-resize-handle" data-col="name"></div></span><span class="task-header-cell">Assigned<div class="col-resize-handle" data-col="assigned"></div></span><span class="task-header-cell">Status<div class="col-resize-handle" data-col="status"></div></span><span class="task-header-cell">Dates<div class="col-resize-handle" data-col="dates"></div></span></div>
+      <div class="task-header"><span></span><span class="task-header-cell" data-col="wbs">WBS<div class="col-resize-handle" data-col="wbs"></div></span><span class="task-header-cell" data-col="name">Task Name<div class="col-resize-handle" data-col="name"></div></span><span class="task-header-cell" data-col="assigned">Assigned<div class="col-resize-handle" data-col="assigned"></div></span><span class="task-header-cell" data-col="status">Status<div class="col-resize-handle" data-col="status"></div></span><span class="task-header-cell" data-col="dates">Dates<div class="col-resize-handle" data-col="dates"></div></span></div>
       <div class="task-list" id="taskList"></div>
       <div class="hidden-tasks-drawer" id="hiddenTasksDrawer" style="display:none"></div>
     </div>
@@ -1900,7 +1908,9 @@
       const panel = document.getElementById('taskPanel');
       COLUMN_DEFS.forEach(col => {
         if (col.alwaysOn) return;
-        panel.style.setProperty('--col-' + col.key, hiddenColumns.has(col.key) ? '0px' : columnWidths[col.key] + 'px');
+        const hidden = hiddenColumns.has(col.key);
+        panel.style.setProperty('--col-' + col.key, hidden ? '0px' : columnWidths[col.key] + 'px');
+        panel.classList.toggle('hide-col-' + col.key, hidden);
       });
     }
     function renderColumnsVisibility() {
