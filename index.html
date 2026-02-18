@@ -1908,8 +1908,8 @@
       ul.innerHTML = COLUMN_DEFS.map(col => {
         const checked = !hiddenColumns.has(col.key);
         const disabled = col.alwaysOn ? ' disabled' : '';
-        return `<li onclick="if(!this.querySelector('input').disabled){this.querySelector('input').click()}">
-          <input type="checkbox" ${checked ? 'checked' : ''}${disabled} onchange="event.stopPropagation();toggleColumnVisibility('${col.key}', this.checked)">
+        return `<li onclick="var cb=this.querySelector('input');if(!cb.disabled && event.target!==cb){cb.checked=!cb.checked;toggleColumnVisibility('${col.key}',cb.checked)}">
+          <input type="checkbox" ${checked ? 'checked' : ''}${disabled} onclick="event.stopPropagation()" onchange="toggleColumnVisibility('${col.key}', this.checked)">
           <label>${col.label}</label>
         </li>`;
       }).join('');
