@@ -75,7 +75,7 @@
       padding: 10px 8px; background: #f8f9fa; border-bottom: 2px solid #e0e0e0;
       font-weight: 600; font-size: 11px; color: #5f6368; text-transform: uppercase; letter-spacing: 0.5px;
     }
-    .task-header-cell { position: relative; overflow: visible; }
+    .task-header-cell { position: relative; overflow: visible; min-width: 0; }
     .col-resize-handle {
       position: absolute; right: -3px; top: -10px; bottom: -10px; width: 7px;
       cursor: col-resize; z-index: 10; background: transparent;
@@ -102,7 +102,7 @@
     .expand-btn:hover { background: #d0d0d0; }
     .expand-btn.collapsed { background: #1a73e8; color: white; }
     .expand-btn.no-children { visibility: hidden; }
-    .task-wbs { font-family: 'SF Mono', Monaco, monospace; font-size: 11px; color: #666; }
+    .task-wbs { font-family: 'SF Mono', Monaco, monospace; font-size: 11px; color: #666; overflow: hidden; }
     .task-name { display: flex; align-items: center; gap: 6px; padding-right: 10px; overflow: hidden; }
     .task-name-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; }
     .task-assigned {
@@ -141,7 +141,7 @@
     .assign-popup-item input[type="checkbox"] { margin: 0; cursor: pointer; }
     .assign-popup-item label { cursor: pointer; flex: 1; }
 
-    .task-dates { font-size: 10px; color: #888; font-family: 'SF Mono', Monaco, monospace; cursor: pointer; border-radius: 3px; padding: 2px 4px; margin: -2px -4px; }
+    .task-dates { font-size: 10px; color: #888; font-family: 'SF Mono', Monaco, monospace; cursor: pointer; border-radius: 3px; padding: 2px 4px; margin: -2px -4px; overflow: hidden; }
     .task-dates:hover { background: #e8f0fe; color: #1a73e8; }
     .task-dates.rollup { background: #ebebeb; border-radius: 10px; color: #999; cursor: default; }
     .task-dates.rollup:hover { background: #ebebeb; color: #999; }
@@ -455,6 +455,11 @@
     .settings-tab.active { color: #1a73e8; border-bottom-color: #1a73e8; }
     .settings-tab-content { display: none; }
     .settings-tab-content.active { display: block; }
+    .columns-list { list-style: none; margin: 0; padding: 0; }
+    .columns-list li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1px solid #e0e0e0; border-radius: 6px; margin-bottom: 6px; font-size: 14px; cursor: pointer; user-select: none; }
+    .columns-list li:hover { background: #f8f9fa; }
+    .columns-list li input[type="checkbox"] { accent-color: #1a73e8; width: 16px; height: 16px; cursor: pointer; }
+    .columns-list li label { cursor: pointer; flex: 1; }
     .settings-status-list { list-style: none; margin: 0 0 12px 0; padding: 0; }
     .settings-status-list li {
       display: flex; align-items: center; gap: 10px; padding: 8px 12px;
@@ -616,6 +621,7 @@
         <button class="settings-tab active" data-tab="sprints" onclick="switchSettingsTab('sprints')">Sprints</button>
         <button class="settings-tab" data-tab="team" onclick="switchSettingsTab('team')">Team</button>
         <button class="settings-tab" data-tab="statuses" onclick="switchSettingsTab('statuses')">Statuses</button>
+        <button class="settings-tab" data-tab="columns" onclick="switchSettingsTab('columns')">Columns</button>
       </div>
       <div class="modal-body">
         <div class="settings-tab-content active" id="settingsTabSprints">
@@ -643,6 +649,9 @@
             <input type="text" id="newMemberName" placeholder="New member name" onkeypress="if(event.key==='Enter')addTeamMember()">
             <button onclick="addTeamMember()">Add</button>
           </div>
+        </div>
+        <div class="settings-tab-content" id="settingsTabColumns">
+          <ul class="columns-list" id="columnsVisibilityList"></ul>
         </div>
         <div class="settings-tab-content" id="settingsTabStatuses">
           <ul class="settings-status-list" id="settingsStatusList"></ul>
@@ -701,6 +710,14 @@
     const userColors = ['#4285f4', '#34a853', '#fbbc04', '#ea4335', '#9c27b0', '#00bcd4', '#ff5722', '#795548'];
     let columnWidths = { handle: 30, wbs: 60, name: 200, assigned: 80, status: 110, dates: 90 };
     const COL_MIN_WIDTHS = { wbs: 40, name: 100, assigned: 40, status: 60, dates: 50 };
+    const COLUMN_DEFS = [
+      { key: 'wbs', label: 'WBS', alwaysOn: false },
+      { key: 'name', label: 'Task Name', alwaysOn: true },
+      { key: 'assigned', label: 'Assigned', alwaysOn: false },
+      { key: 'status', label: 'Status', alwaysOn: false },
+      { key: 'dates', label: 'Dates', alwaysOn: false }
+    ];
+    let hiddenColumns = new Set();
 
     const BAR_COLOR_PRESETS = {
       blue:   { gradient: 'linear-gradient(135deg, #7baaf0 0%, #a0c4f7 100%)' },
@@ -744,6 +761,7 @@
       currentUser = { name, id: 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9), color: userColors[Math.floor(Math.random() * userColors.length)] };
       loadTempHidden();
       loadActiveSprints();
+      loadHiddenColumns();
       document.getElementById('nameModal').style.opacity = '0';
       document.getElementById('nameModal').style.visibility = 'hidden';
       document.getElementById('loadingOverlay').classList.remove('hidden');
@@ -1175,8 +1193,10 @@
       panel.style.setProperty('--col-assigned', columnWidths.assigned + 'px');
       panel.style.setProperty('--col-status', columnWidths.status + 'px');
       panel.style.setProperty('--col-dates', columnWidths.dates + 'px');
-      const total = Object.values(columnWidths).reduce((s, w) => s + w, 0) + 16;
-      panel.style.width = total + 'px';
+      // Override hidden columns
+      hiddenColumns.forEach(key => panel.style.setProperty('--col-' + key, '0px'));
+      const visibleTotal = Object.entries(columnWidths).reduce((s, [k, w]) => s + (hiddenColumns.has(k) ? 0 : w), 0) + 16;
+      panel.style.width = visibleTotal + 'px';
     }
 
     function setupColumnResize() {
@@ -1814,6 +1834,7 @@
       renderTeamList();
       renderSettingsStatusList();
       renderNewStatusColorPicker();
+      renderColumnsVisibility();
       switchSettingsTab(tab || 'sprints');
       document.getElementById('settingsModal').classList.add('visible');
     }
@@ -1823,8 +1844,37 @@
     function switchSettingsTab(tab) {
       document.querySelectorAll('.settings-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
       document.querySelectorAll('.settings-tab-content').forEach(c => c.classList.remove('active'));
-      const map = { sprints: 'settingsTabSprints', team: 'settingsTabTeam', statuses: 'settingsTabStatuses' };
+      const map = { sprints: 'settingsTabSprints', team: 'settingsTabTeam', statuses: 'settingsTabStatuses', columns: 'settingsTabColumns' };
       const el = document.getElementById(map[tab]); if (el) el.classList.add('active');
+    }
+
+    // ========== COLUMN VISIBILITY ==========
+    function colVisStorageKey() { return 'gantt_hiddenCols_' + (currentUser.name || ''); }
+    function saveHiddenColumns() { try { localStorage.setItem(colVisStorageKey(), JSON.stringify([...hiddenColumns])); } catch(e) {} }
+    function loadHiddenColumns() { try { const d = localStorage.getItem(colVisStorageKey()); if (d) { hiddenColumns = new Set(JSON.parse(d)); } } catch(e) {} }
+    function applyColumnVisibility() {
+      const panel = document.getElementById('taskPanel');
+      COLUMN_DEFS.forEach(col => {
+        if (col.alwaysOn) return;
+        panel.style.setProperty('--col-' + col.key, hiddenColumns.has(col.key) ? '0px' : columnWidths[col.key] + 'px');
+      });
+    }
+    function renderColumnsVisibility() {
+      const ul = document.getElementById('columnsVisibilityList');
+      ul.innerHTML = COLUMN_DEFS.map(col => {
+        const checked = !hiddenColumns.has(col.key);
+        const disabled = col.alwaysOn ? ' disabled' : '';
+        return `<li onclick="if(!this.querySelector('input').disabled){this.querySelector('input').click()}">
+          <input type="checkbox" ${checked ? 'checked' : ''}${disabled} onchange="event.stopPropagation();toggleColumnVisibility('${col.key}', this.checked)">
+          <label>${col.label}</label>
+        </li>`;
+      }).join('');
+    }
+    function toggleColumnVisibility(key, visible) {
+      if (visible) { hiddenColumns.delete(key); } else { hiddenColumns.add(key); }
+      saveHiddenColumns();
+      applyColumnVisibility();
+      render();
     }
 
     function renderSettingsStatusList() {
