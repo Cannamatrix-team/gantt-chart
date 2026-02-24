@@ -234,6 +234,18 @@
     .sprint-list li .sprint-dates { font-size: 11px; color: #888; font-family: 'SF Mono', Monaco, monospace; }
     .sprint-list li button.sprint-delete { background: none; border: none; color: #ea4335; cursor: pointer; font-size: 16px; padding: 2px 6px; border-radius: 4px; flex-shrink: 0; }
     .sprint-list li button.sprint-delete:hover { background: #fce8e6; }
+    .sprint-list li button.sprint-edit { background: none; border: none; color: #1a73e8; cursor: pointer; font-size: 13px; padding: 2px 6px; border-radius: 4px; flex-shrink: 0; }
+    .sprint-list li button.sprint-edit:hover { background: #e8f0fe; }
+    .sprint-edit-form { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 0; }
+    .sprint-edit-form .sprint-form-row { display: flex; gap: 8px; align-items: center; }
+    .sprint-edit-form input[type="text"], .sprint-edit-form input[type="date"] { flex: 1; padding: 6px 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; }
+    .sprint-edit-form input:focus { outline: none; border-color: #1a73e8; }
+    .sprint-edit-form .sprint-edit-actions { display: flex; gap: 6px; }
+    .sprint-edit-form .sprint-edit-actions button { padding: 5px 12px; border-radius: 4px; border: none; cursor: pointer; font-size: 12px; }
+    .sprint-edit-form .sprint-edit-actions .btn-save { background: #1a73e8; color: white; }
+    .sprint-edit-form .sprint-edit-actions .btn-save:hover { background: #1557b0; }
+    .sprint-edit-form .sprint-edit-actions .btn-cancel { background: #f1f3f4; color: #333; }
+    .sprint-edit-form .sprint-edit-actions .btn-cancel:hover { background: #e0e0e0; }
     .sprint-add-form { display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 1px dashed #ccc; border-radius: 8px; background: #fafafa; }
     .sprint-add-form .sprint-form-row { display: flex; gap: 8px; align-items: center; }
     .sprint-add-form input[type="text"], .sprint-add-form input[type="date"] { flex: 1; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; }
@@ -809,6 +821,7 @@
       loadFilters();
       loadActiveSprints();
       loadHiddenColumns();
+      applyColumnVisibility();
       document.getElementById('nameModal').style.opacity = '0';
       document.getElementById('nameModal').style.visibility = 'hidden';
       document.getElementById('loadingOverlay').classList.remove('hidden');
@@ -1854,13 +1867,14 @@
       }
       ul.innerHTML = sprints.map(s => {
         const checked = activeSprintIds.has(s.id) ? ' checked' : '';
-        return `<li>
+        return `<li data-sprint-id="${s.id}">
           <input type="checkbox"${checked} onchange="toggleSprintHighlight('${s.id}')">
           <span class="sprint-dot" style="background:${s.color || '#1a73e8'}"></span>
           <span class="sprint-info">
             <span class="sprint-name">${s.name}</span><br>
             <span class="sprint-dates">${s.start} → ${s.end}</span>
           </span>
+          <button class="sprint-edit" onclick="editSprint('${s.id}')" title="Edit">✎</button>
           <button class="sprint-delete" onclick="deleteSprint('${s.id}')" title="Delete">×</button>
         </li>`;
       }).join('');
@@ -1918,6 +1932,68 @@
       }
       renderSprintList();
       toast('Sprint deleted');
+    }
+
+    function editSprint(id) {
+      const s = sprints.find(x => x.id === id);
+      if (!s) return;
+      const li = document.querySelector(`.sprint-list li[data-sprint-id="${id}"]`);
+      if (!li) return;
+      const currentColor = s.color || '#1a73e8';
+      li.innerHTML = `<div class="sprint-edit-form">
+        <div class="sprint-form-row">
+          <input type="text" id="editSprintName_${id}" value="${s.name}" placeholder="Sprint name">
+        </div>
+        <div class="sprint-form-row">
+          <input type="date" id="editSprintStart_${id}" value="${s.start}">
+          <input type="date" id="editSprintEnd_${id}" value="${s.end}">
+        </div>
+        <div class="sprint-form-row">
+          <div class="sprint-color-palette" id="editSprintPalette_${id}"></div>
+          <input type="hidden" id="editSprintColor_${id}" value="${currentColor}">
+        </div>
+        <div class="sprint-edit-actions">
+          <button class="btn-save" onclick="saveSprintEdit('${id}')">Save</button>
+          <button class="btn-cancel" onclick="cancelSprintEdit()">Cancel</button>
+        </div>
+      </div>`;
+      const palette = document.getElementById('editSprintPalette_' + id);
+      const hidden = document.getElementById('editSprintColor_' + id);
+      palette.innerHTML = SPRINT_COLOR_PRESETS.map(hex => {
+        const sel = hex === currentColor ? ' selected' : '';
+        return `<div class="sprint-color-swatch${sel}" style="background:${hex}" data-color="${hex}"></div>`;
+      }).join('');
+      palette.querySelectorAll('.sprint-color-swatch').forEach(swatch => {
+        swatch.addEventListener('click', () => {
+          palette.querySelectorAll('.sprint-color-swatch').forEach(s => s.classList.remove('selected'));
+          swatch.classList.add('selected');
+          hidden.value = swatch.dataset.color;
+        });
+      });
+      document.getElementById('editSprintName_' + id).focus();
+    }
+
+    function saveSprintEdit(id) {
+      const name = document.getElementById('editSprintName_' + id).value.trim();
+      const start = document.getElementById('editSprintStart_' + id).value;
+      const end = document.getElementById('editSprintEnd_' + id).value;
+      const color = document.getElementById('editSprintColor_' + id).value;
+      if (!name || !start || !end) { toast('Name, start, and end dates are required', 'error'); return; }
+      if (parseLocalDate(start) > parseLocalDate(end)) { toast('Start must be before end', 'error'); return; }
+      if (sprintsRef) {
+        sprintsRef.child(id).set({ name, start, end, color });
+      } else {
+        const idx = sprints.findIndex(x => x.id === id);
+        if (idx !== -1) { sprints[idx] = { ...sprints[idx], name, start, end, color }; }
+        sprints.sort((a, b) => a.start.localeCompare(b.start));
+        render();
+      }
+      renderSprintList();
+      toast('Sprint updated');
+    }
+
+    function cancelSprintEdit() {
+      renderSprintList();
     }
 
     function sprintSelStorageKey() { return 'gantt_activeSprints_' + (currentUser.name || ''); }
@@ -2013,10 +2089,9 @@
       const panel = document.getElementById('taskPanel');
       COLUMN_DEFS.forEach(col => {
         if (col.alwaysOn) return;
-        const hidden = hiddenColumns.has(col.key);
-        panel.style.setProperty('--col-' + col.key, hidden ? '0px' : columnWidths[col.key] + 'px');
-        panel.classList.toggle('hide-col-' + col.key, hidden);
+        panel.classList.toggle('hide-col-' + col.key, hiddenColumns.has(col.key));
       });
+      applyColumnWidths();
     }
     function renderColumnsVisibility() {
       const ul = document.getElementById('columnsVisibilityList');
