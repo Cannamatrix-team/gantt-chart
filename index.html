@@ -76,6 +76,7 @@
       font-weight: 600; font-size: 11px; color: #5f6368; text-transform: uppercase; letter-spacing: 0.5px;
     }
     .task-header-cell { position: relative; overflow: visible; min-width: 0; }
+    .task-header-label { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; margin-right: 4px; pointer-events: none; }
     .col-resize-handle {
       position: absolute; right: -3px; top: -10px; bottom: -10px; width: 7px;
       cursor: col-resize; z-index: 10; background: transparent;
@@ -483,7 +484,7 @@
     .task-panel.hide-col-status .task-status-cell,
     .task-panel.hide-col-status .task-header-cell[data-col="status"],
     .task-panel.hide-col-dates .task-dates,
-    .task-panel.hide-col-dates .task-header-cell[data-col="dates"] { overflow: hidden; visibility: hidden; padding: 0 !important; margin: 0; }
+    .task-panel.hide-col-dates .task-header-cell[data-col="dates"] { overflow: hidden; visibility: hidden; width: 0; max-width: 0; padding: 0 !important; margin: 0; }
     .settings-status-list { list-style: none; margin: 0 0 12px 0; padding: 0; }
     .settings-status-list li {
       display: flex; align-items: center; gap: 10px; padding: 8px 12px;
@@ -577,7 +578,7 @@
   
   <div class="main-container">
     <div class="task-panel" id="taskPanel">
-      <div class="task-header"><span></span><span class="task-header-cell" data-col="wbs">WBS<div class="col-resize-handle" data-col="wbs"></div></span><span class="task-header-cell" data-col="name">Task Name<div class="col-resize-handle" data-col="name"></div></span><span class="task-header-cell" data-col="assigned">Assigned<div class="col-resize-handle" data-col="assigned"></div></span><span class="task-header-cell" data-col="status">Status<div class="col-resize-handle" data-col="status"></div></span><span class="task-header-cell" data-col="dates">Dates<div class="col-resize-handle" data-col="dates"></div></span></div>
+      <div class="task-header"><span></span><span class="task-header-cell" data-col="wbs"><span class="task-header-label">WBS</span><div class="col-resize-handle" data-col="wbs"></div></span><span class="task-header-cell" data-col="name"><span class="task-header-label">Task Name</span><div class="col-resize-handle" data-col="name"></div></span><span class="task-header-cell" data-col="assigned"><span class="task-header-label">Assigned</span><div class="col-resize-handle" data-col="assigned"></div></span><span class="task-header-cell" data-col="status"><span class="task-header-label">Status</span><div class="col-resize-handle" data-col="status"></div></span><span class="task-header-cell" data-col="dates"><span class="task-header-label">Dates</span><div class="col-resize-handle" data-col="dates"></div></span></div>
       <div class="task-list" id="taskList"></div>
       <div class="hidden-tasks-drawer" id="hiddenTasksDrawer" style="display:none"></div>
     </div>
@@ -747,6 +748,8 @@
     let projectStartDate = null, projectEndDate = null;
     let isDragging = false, dragType = null, dragTask = null, dragStartX = 0;
     let dragStartDate = null, dragEndDate = null, dragOriginalStart = null, dragOriginalEnd = null;
+    let dragPending = false, dragPendingType = null, dragPendingTask = null, dragPendingStartX = 0, dragPendingSide = null;
+    const DRAG_THRESHOLD = 4;
     let dependencyStartTask = null;
     const userColors = ['#4285f4', '#34a853', '#fbbc04', '#ea4335', '#9c27b0', '#00bcd4', '#ff5722', '#795548'];
     let columnWidths = { handle: 30, wbs: 60, name: 200, assigned: 80, status: 110, dates: 90 };
@@ -1175,7 +1178,7 @@
       bar.querySelector('.dependency-connector.left').addEventListener('mousedown', (e) => startDepDrag(e, task));
       bar.querySelector('.dependency-connector.right').addEventListener('mousedown', (e) => startDepDrag(e, task));
       bar.addEventListener('mousedown', (e) => { if (!e.target.classList.contains('task-bar-resize') && !e.target.classList.contains('dependency-connector')) startDragMove(e, task); });
-      bar.addEventListener('dblclick', () => showEditTaskModal(task.id));
+      bar.addEventListener('dblclick', () => { dragPending = false; dragPendingType = null; dragPendingTask = null; isDragging = false; dragType = null; showEditTaskModal(task.id); });
       bar.addEventListener('contextmenu', (e) => showContextMenu(e, task.id));
       return bar;
     }
@@ -1313,8 +1316,9 @@
       gc.addEventListener('scroll', () => { tl.scrollTop = gc.scrollTop; document.getElementById('ganttHeader').scrollLeft = gc.scrollLeft; });
     }
 
-    function startDragMove(e, task) { if (e.button !== 0) return; e.preventDefault(); e.stopPropagation(); isDragging = true; dragType = 'move'; dragTask = task; dragStartX = e.clientX; dragStartDate = parseLocalDate(task.start); dragEndDate = parseLocalDate(task.end); dragOriginalStart = null; dragOriginalEnd = null; document.querySelector(`.task-bar[data-task-id="${task.id}"]`)?.classList.add('dragging'); }
-    function startResize(e, task, side) { if (e.button !== 0) return; e.preventDefault(); e.stopPropagation(); isDragging = true; dragType = 'resize-' + side; dragTask = task; dragStartX = e.clientX; dragStartDate = parseLocalDate(task.start); dragEndDate = parseLocalDate(task.end); dragOriginalStart = null; dragOriginalEnd = null; document.querySelector(`.task-bar[data-task-id="${task.id}"]`)?.classList.add('dragging'); }
+    function startDragMove(e, task) { if (e.button !== 0) return; e.preventDefault(); e.stopPropagation(); dragPending = true; dragPendingType = 'move'; dragPendingTask = task; dragPendingStartX = e.clientX; dragPendingSide = null; }
+    function startResize(e, task, side) { if (e.button !== 0) return; e.preventDefault(); e.stopPropagation(); dragPending = true; dragPendingType = 'resize-' + side; dragPendingTask = task; dragPendingStartX = e.clientX; dragPendingSide = side; }
+    function promotePendingDrag() { isDragging = true; dragType = dragPendingType; dragTask = dragPendingTask; dragStartX = dragPendingStartX; dragStartDate = parseLocalDate(dragTask.start); dragEndDate = parseLocalDate(dragTask.end); dragOriginalStart = null; dragOriginalEnd = null; document.querySelector(`.task-bar[data-task-id="${dragTask.id}"]`)?.classList.add('dragging'); dragPending = false; dragPendingType = null; dragPendingTask = null; }
     function startDepDrag(e, task) { if (e.button !== 0) return; e.preventDefault(); e.stopPropagation(); isDragging = true; dragType = 'dependency'; dependencyStartTask = task; const bar = document.querySelector(`.task-bar[data-task-id="${task.id}"]`), rect = bar.getBoundingClientRect(); const line = document.getElementById('tempDependencyLine'); line.style.display = 'block'; line.setAttribute('x1', rect.right); line.setAttribute('y1', rect.top + rect.height / 2); line.setAttribute('x2', e.clientX); line.setAttribute('y2', e.clientY); }
     function cancelDepDrag() { if (dragType === 'dependency') { document.getElementById('tempDependencyLine').style.display = 'none'; isDragging = false; dragType = null; dependencyStartTask = null; } }
 
@@ -1346,6 +1350,9 @@
     }
 
     function handleMouseMove(e) {
+      if (dragPending && Math.abs(e.clientX - dragPendingStartX) >= DRAG_THRESHOLD) {
+        promotePendingDrag();
+      }
       if (!isDragging || !dragTask && dragType !== 'dependency') return;
       e.preventDefault();
       const bar = dragTask ? document.querySelector(`.task-bar[data-task-id="${dragTask.id}"]`) : null;
@@ -1380,6 +1387,7 @@
     }
 
     function handleMouseUp(e) {
+      if (dragPending) { dragPending = false; dragPendingType = null; dragPendingTask = null; return; }
       if (!isDragging) return;
       hideDragGuides();
       if ((dragType === 'move' || dragType?.startsWith('resize')) && dragTask) {
