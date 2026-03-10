@@ -170,7 +170,7 @@
     .gantt-day-letter { font-size: 8px; color: #999; text-transform: uppercase; font-weight: 500; }
     .gantt-day.weekend { background: #f5f5f5; color: #999; }
     .gantt-day.today { background: #fff3e0; color: #e65100; font-weight: 600; }
-    .today-line { position: absolute; top: 0; bottom: 0; width: 2px; background: #ea4335; z-index: 11; pointer-events: none; }
+
     .gantt-body-container { flex: 1; overflow: auto; position: relative; }
     .gantt-body { position: relative; min-height: 100%; }
     .gantt-row { height: 41px; display: flex; align-items: center; border-bottom: 1px solid #f0f0f0; position: relative; }
@@ -1051,7 +1051,7 @@
         if (isFirstLoad) updateFilterBtn();
         if (isFirstLoad && projectStartDate) {
           const gc = document.getElementById('ganttBodyContainer');
-          const todayOff = Math.floor((new Date(today) - projectStartDate) / 864e5) * dayWidth;
+          const todayOff = dayDiff(projectStartDate, new Date(today)) * dayWidth;
           gc.scrollLeft = Math.max(0, todayOff - gc.clientWidth / 2);
         }
       });
@@ -1069,6 +1069,7 @@
         const data = snap.val();
         sprints = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
         sprints.sort((a, b) => a.start.localeCompare(b.start));
+        renderSprintList();
         render();
       });
       settingsRef.child('statuses').on('value', (snap) => {
@@ -1229,7 +1230,7 @@
       const mc = document.getElementById('ganttMonths'), dc = document.getElementById('ganttDays');
       mc.innerHTML = ''; dc.innerHTML = '';
       document.documentElement.style.setProperty('--day-width', dayWidth + 'px');
-      const totalDays = Math.min(Math.ceil((projectEndDate - projectStartDate) / 864e5), 1095);
+      const totalDays = Math.min(dayDiff(projectStartDate, projectEndDate), 1095);
       const totalWidth = totalDays * dayWidth;
       mc.style.width = totalWidth + 'px';
       dc.style.width = totalWidth + 'px';
@@ -1253,7 +1254,7 @@
     }
 
     function renderGanttBody() {
-      const c = document.getElementById('ganttBody'), totalDays = Math.min(Math.ceil((projectEndDate - projectStartDate) / 864e5), 1095);
+      const c = document.getElementById('ganttBody'), totalDays = Math.min(dayDiff(projectStartDate, projectEndDate), 1095);
       const svg = document.getElementById('dependencyLines');
       c.innerHTML = ''; c.appendChild(svg); c.style.width = (totalDays * dayWidth) + 'px';
       getVisibleTasks().forEach(task => {
@@ -1276,8 +1277,8 @@
         if (!sprint) return;
         const sprintStart = parseLocalDate(sprint.start);
         const sprintEnd = parseLocalDate(sprint.end);
-        const startOff = Math.floor((sprintStart - projectStartDate) / 864e5);
-        const duration = Math.ceil((sprintEnd - sprintStart) / 864e5) + 1;
+        const startOff = dayDiff(projectStartDate, sprintStart);
+        const duration = dayDiff(sprintStart, sprintEnd) + 1;
         const overlay = document.createElement('div');
         overlay.className = 'sprint-overlay';
         const hex = sprint.color || '#1a73e8';
@@ -1289,15 +1290,6 @@
         c.appendChild(overlay);
       });
 
-      // Today line
-      const todayDate = new Date(); todayDate.setHours(0,0,0,0);
-      const todayOff = Math.floor((todayDate - projectStartDate) / 864e5);
-      if (todayOff >= 0 && todayOff <= totalDays) {
-        const line = document.createElement('div');
-        line.className = 'today-line';
-        line.style.left = (todayOff * dayWidth + dayWidth / 2) + 'px';
-        c.appendChild(line);
-      }
 
     }
 
@@ -1311,8 +1303,8 @@
       if (task.color && BAR_COLOR_PRESETS[task.color]) {
         bar.style.background = BAR_COLOR_PRESETS[task.color].gradient;
       }
-      const startOff = Math.floor((parseLocalDate(task.start) - projectStartDate) / 864e5);
-      const dur = Math.ceil((parseLocalDate(task.end) - parseLocalDate(task.start)) / 864e5) + 1;
+      const startOff = dayDiff(projectStartDate, parseLocalDate(task.start));
+      const dur = dayDiff(parseLocalDate(task.start), parseLocalDate(task.end)) + 1;
       bar.style.left = (startOff * dayWidth) + 'px';
       bar.style.width = (dur * dayWidth - 4) + 'px';
       const statusDef = TASK_STATUSES[task.status || ''];
@@ -1342,8 +1334,8 @@
     function createBaselineBar(task) {
       const bar = document.createElement('div');
       bar.className = 'baseline-bar';
-      const startOff = Math.floor((parseLocalDate(task.start) - projectStartDate) / 864e5);
-      const dur = Math.ceil((parseLocalDate(task.end) - parseLocalDate(task.start)) / 864e5) + 1;
+      const startOff = dayDiff(projectStartDate, parseLocalDate(task.start));
+      const dur = dayDiff(parseLocalDate(task.start), parseLocalDate(task.end)) + 1;
       bar.style.left = (startOff * dayWidth) + 'px';
       bar.style.width = (dur * dayWidth - 4) + 'px';
       return bar;
@@ -1480,8 +1472,8 @@
 
     function showDragGuides(bar, startDate, endDate) {
       const body = document.getElementById('ganttBody');
-      const startOff = Math.floor((startDate - projectStartDate) / 864e5) * dayWidth;
-      const endOff = (Math.floor((endDate - projectStartDate) / 864e5) + 1) * dayWidth;
+      const startOff = dayDiff(projectStartDate, startDate) * dayWidth;
+      const endOff = (dayDiff(projectStartDate, endDate) + 1) * dayWidth;
       let startLine = document.getElementById('dragGuideStart');
       let endLine = document.getElementById('dragGuideEnd');
       let tooltip = document.getElementById('dragDateTooltip');
@@ -1498,7 +1490,7 @@
       tooltip.style.left = (barLeft + barWidth / 2) + 'px';
       tooltip.style.top = (parseFloat(bar.closest('.gantt-row')?.offsetTop) - 22) + 'px';
       const s = startDate, ed = endDate;
-      const dur = Math.ceil((ed - s) / 864e5) + 1;
+      const dur = dayDiff(s, ed) + 1;
       tooltip.textContent = `${s.getMonth()+1}/${s.getDate()}/${s.getFullYear()} – ${ed.getMonth()+1}/${ed.getDate()}/${ed.getFullYear()}  (${dur}d)`;
     }
     function hideDragGuides() {
@@ -1516,15 +1508,15 @@
         const delta = Math.round((e.clientX - dragStartX) / dayWidth);
         const newStart = new Date(dragStartDate); newStart.setDate(newStart.getDate() + delta);
         const newEnd = new Date(dragEndDate); newEnd.setDate(newEnd.getDate() + delta);
-        bar.style.left = (Math.floor((newStart - projectStartDate) / 864e5) * dayWidth) + 'px';
+        bar.style.left = (dayDiff(projectStartDate, newStart) * dayWidth) + 'px';
         dragOriginalStart = newStart; dragOriginalEnd = newEnd;
         showDragGuides(bar, newStart, newEnd);
       } else if (dragType === 'resize-left' && bar) {
         const delta = Math.round((e.clientX - dragStartX) / dayWidth);
         const newStart = new Date(dragStartDate); newStart.setDate(newStart.getDate() + delta);
         if (newStart >= parseLocalDate(dragTask.end)) return;
-        const dur = Math.ceil((parseLocalDate(dragTask.end) - newStart) / 864e5) + 1;
-        bar.style.left = (Math.floor((newStart - projectStartDate) / 864e5) * dayWidth) + 'px';
+        const dur = dayDiff(newStart, parseLocalDate(dragTask.end)) + 1;
+        bar.style.left = (dayDiff(projectStartDate, newStart) * dayWidth) + 'px';
         bar.style.width = (dur * dayWidth - 4) + 'px';
         dragOriginalStart = newStart;
         showDragGuides(bar, newStart, parseLocalDate(dragTask.end));
@@ -1532,7 +1524,7 @@
         const delta = Math.round((e.clientX - dragStartX) / dayWidth);
         const newEnd = new Date(dragEndDate); newEnd.setDate(newEnd.getDate() + delta);
         if (newEnd <= parseLocalDate(dragTask.start)) return;
-        const dur = Math.ceil((newEnd - parseLocalDate(dragTask.start)) / 864e5) + 1;
+        const dur = dayDiff(parseLocalDate(dragTask.start), newEnd) + 1;
         bar.style.width = (dur * dayWidth - 4) + 'px';
         dragOriginalEnd = newEnd;
         showDragGuides(bar, parseLocalDate(dragTask.start), newEnd);
@@ -1560,7 +1552,7 @@
           if (idx !== -1) {
             if (movedStart) tasks[idx].start = fmtDate(movedStart);
             if (movedEnd) tasks[idx].end = fmtDate(movedEnd);
-            tasks[idx].duration = Math.ceil((parseLocalDate(tasks[idx].end) - parseLocalDate(tasks[idx].start)) / 864e5) + 1;
+            tasks[idx].duration = dayDiff(parseLocalDate(tasks[idx].start), parseLocalDate(tasks[idx].end)) + 1;
             _lastEditedTaskId = tasks[idx].id;
             saveTaskToDb(tasks[idx]);
             toast('Task updated');
@@ -1652,7 +1644,7 @@
         assigned: document.getElementById('taskAssigned').value,
         start: document.getElementById('taskStart').value,
         end: document.getElementById('taskEnd').value,
-        duration: Math.ceil((parseLocalDate(document.getElementById('taskEnd').value) - parseLocalDate(document.getElementById('taskStart').value)) / 864e5) + 1,
+        duration: dayDiff(parseLocalDate(document.getElementById('taskStart').value), parseLocalDate(document.getElementById('taskEnd').value)) + 1,
         progress: parseInt(document.getElementById('taskProgress').value) || 0,
         dependencies: document.getElementById('taskDependencies').value.split(',').map(d => d.trim()).filter(d => d).map(wbs => { const dt = tasks.find(x => String(x.wbs) === wbs); return dt ? dt.id : wbs; }),
         autoRollup: document.getElementById('taskAutoRollup').checked,
@@ -1811,7 +1803,7 @@
 
           const newStart = fmtDate(new Date(Math.min(...dates)));
           const newEnd = fmtDate(new Date(Math.max(...dates)));
-          const newDuration = Math.ceil((parseLocalDate(newEnd) - parseLocalDate(newStart)) / 864e5) + 1;
+          const newDuration = dayDiff(parseLocalDate(newStart), parseLocalDate(newEnd)) + 1;
 
           let newProgress = p.progress || 0;
           const withDur = directChildren.filter(c => c.duration > 0);
@@ -2048,12 +2040,10 @@
       if (parseLocalDate(start) > parseLocalDate(end)) { toast('Start must be before end', 'error'); return; }
       const id = 'sp_' + Date.now();
       const sprint = { name, start, end, color };
+      sprints.push({ id, ...sprint });
+      sprints.sort((a, b) => a.start.localeCompare(b.start));
       if (sprintsRef) {
         sprintsRef.child(id).set(sprint);
-      } else {
-        sprints.push({ id, ...sprint });
-        sprints.sort((a, b) => a.start.localeCompare(b.start));
-        render();
       }
       document.getElementById('newSprintName').value = '';
       document.getElementById('newSprintStart').value = '';
@@ -2067,13 +2057,12 @@
       if (!s || !confirm(`Delete sprint "${s.name}"?`)) return;
       activeSprintIds.delete(id);
       saveActiveSprints();
+      sprints = sprints.filter(x => x.id !== id);
       if (sprintsRef) {
         sprintsRef.child(id).remove();
-      } else {
-        sprints = sprints.filter(x => x.id !== id);
-        render();
       }
       renderSprintList();
+      render();
       toast('Sprint deleted');
     }
 
@@ -2123,15 +2112,14 @@
       const color = document.getElementById('editSprintColor_' + id).value;
       if (!name || !start || !end) { toast('Name, start, and end dates are required', 'error'); return; }
       if (parseLocalDate(start) > parseLocalDate(end)) { toast('Start must be before end', 'error'); return; }
+      const idx = sprints.findIndex(x => x.id === id);
+      if (idx !== -1) { sprints[idx] = { ...sprints[idx], name, start, end, color }; }
+      sprints.sort((a, b) => a.start.localeCompare(b.start));
       if (sprintsRef) {
         sprintsRef.child(id).set({ name, start, end, color });
-      } else {
-        const idx = sprints.findIndex(x => x.id === id);
-        if (idx !== -1) { sprints[idx] = { ...sprints[idx], name, start, end, color }; }
-        sprints.sort((a, b) => a.start.localeCompare(b.start));
-        render();
       }
       renderSprintList();
+      render();
       toast('Sprint updated');
     }
 
@@ -2368,6 +2356,7 @@
 
     // ========== UTILS ==========
     function parseLocalDate(dateStr) { if (dateStr instanceof Date) return dateStr; return new Date(dateStr + 'T00:00:00'); }
+    function dayDiff(a, b) { const da = new Date(a), db = new Date(b); return (Date.UTC(db.getFullYear(), db.getMonth(), db.getDate()) - Date.UTC(da.getFullYear(), da.getMonth(), da.getDate())) / 864e5; }
     function fmtDate(d) { if (!(d instanceof Date)) return d; const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0'); return `${y}-${m}-${day}`; }
     function fmtDateShort(d) { const dt = parseLocalDate(d); return (dt.getMonth() + 1) + '/' + dt.getDate(); }
     function toast(msg, type = 'success') { const c = document.getElementById('toastContainer'), t = document.createElement('div'); t.className = `toast ${type}`; t.textContent = msg; c.appendChild(t); setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 3000); }
@@ -2684,7 +2673,7 @@
         if (t.start !== s || t.end !== e) {
           t.start = s;
           t.end = e;
-          t.duration = Math.ceil((parseLocalDate(e) - parseLocalDate(s)) / 864e5) + 1;
+          t.duration = dayDiff(parseLocalDate(s), parseLocalDate(e)) + 1;
           _lastEditedTaskId = taskId;
           saveTaskToDb(t);
           render();
