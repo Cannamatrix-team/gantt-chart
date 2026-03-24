@@ -205,6 +205,13 @@
     .task-bar.parent-task::after { content: ''; position: absolute; inset: 0; border-radius: 5px; background: rgba(140,140,148,0.65); pointer-events: none; }
     .task-bar.parent-task .task-bar-progress { border-radius: 5px 0 0 5px; }
     .task-bar.parent-task .status-stripe { border-radius: 5px 0 0 5px; }
+    .task-bar.milestone { width: 20px !important; height: 20px !important; border-radius: 0 !important; background: linear-gradient(135deg, #f5c518 0%, #e6a817 100%) !important; transform: translateY(-50%) rotate(45deg); overflow: visible; border: 2px solid #c9960e; box-shadow: 0 2px 6px rgba(0,0,0,0.25); }
+    .task-bar.milestone .task-bar-progress,
+    .task-bar.milestone .task-bar-resize,
+    .task-bar.milestone .dependency-connector,
+    .task-bar.milestone .status-stripe,
+    .task-bar.milestone .task-bar-label { display: none; }
+    .task-bar.milestone .task-bar-external { transform: rotate(-45deg) translateY(-50%); left: 28px; top: 10px; }
     .task-bar-resize { position: absolute; top: 0; bottom: 0; width: 8px; cursor: ew-resize; z-index: 5; }
     .task-bar-resize.left { left: 0; border-radius: 4px 0 0 4px; }
     .task-bar-resize.right { right: 0; border-radius: 0 4px 4px 0; }
@@ -582,6 +589,7 @@
     body.dark-mode .gantt-cell { border-right-color: #222; }
     body.dark-mode .gantt-cell.weekend { background: #1a1d23; }
     body.dark-mode .task-bar-name { color: #ddd; }
+    body.dark-mode .task-bar.milestone { border-color: #a87b0a; }
     body.dark-mode .task-bar-avatar { border-color: #1e2127; }
     body.dark-mode .dependency-connector { background: #2a2e35; border-color: #888; }
     body.dark-mode .dependency-connector:hover { border-color: #7baaf0; background: #1e3a5f; }
@@ -751,6 +759,7 @@
         <div class="form-row">
           <div class="form-group"><label>Status</label><select id="taskStatus"></select></div>
           <div class="form-group"><div class="form-checkbox" style="margin-top:22px"><input type="checkbox" id="taskAutoRollup" checked><label for="taskAutoRollup">Auto Rollup (parent spans children)</label></div></div>
+          <div class="form-group"><div class="form-checkbox" style="margin-top:22px"><input type="checkbox" id="taskMilestone"><label for="taskMilestone">◆ Milestone</label></div></div>
           <div class="form-group" id="taskHiddenGroup" style="display:none"><div class="form-checkbox" style="margin-top:22px"><input type="checkbox" id="taskHidden"><label for="taskHidden">Hide from view</label></div></div>
         </div>
         <div class="form-group"><label>Bar Color</label><div class="color-swatch-row" id="barColorSwatches"></div><input type="hidden" id="taskColor"></div>
@@ -1190,7 +1199,7 @@
         row.innerHTML = `
           <span class="drag-handle"><input type="checkbox" class="temp-hide-cb" title="Temporarily hide" ${tempHiddenIds.has(task.id) ? 'checked' : ''} onclick="event.stopPropagation();toggleTempHide('${task.id}', this.checked)"><span class="grip" onmousedown="startTaskListDrag(event, '${task.id}')">⠿</span></span>
           <span class="task-wbs">${task.wbs}</span>
-          <span class="task-name" data-task-id="${task.id}" style="padding-left:${(task.level - 1) * 12}px"><button class="expand-btn ${collapsedIds.has(task.id) ? 'collapsed' : ''} ${!hasChildren ? 'no-children' : ''}" onclick="toggleCollapse('${task.id}', event)">${collapsedIds.has(task.id) ? '▶' : '▼'}</button><span class="task-name-text" title="${task.name}">${task.name}</span></span>
+          <span class="task-name" data-task-id="${task.id}" style="padding-left:${(task.level - 1) * 12}px"><button class="expand-btn ${collapsedIds.has(task.id) ? 'collapsed' : ''} ${!hasChildren ? 'no-children' : ''}" onclick="toggleCollapse('${task.id}', event)">${collapsedIds.has(task.id) ? '▶' : '▼'}</button>${task.milestone ? '<span style="color:#e6a817;margin-right:4px" title="Milestone">◆</span>' : ''}<span class="task-name-text" title="${task.name}">${task.name}</span></span>
           <span class="task-assigned" onclick="event.stopPropagation();openAssignPopup('${task.id}', this)">${task.assigned || '-'}</span>
           <span class="task-status-cell${hasChildren ? ' rollup' : ''}" onclick="event.stopPropagation()">
             <span class="task-status-dot" style="background:${TASK_STATUSES[task.status || '']?.color || 'transparent'}"></span>
@@ -1297,7 +1306,8 @@
     function createTaskBar(task) {
       const bar = document.createElement('div');
       const isParent = tasks.some(t => t.wbs !== task.wbs && String(t.wbs).startsWith(task.wbs + '.'));
-      bar.className = `task-bar level-${task.level}${isParent ? ' parent-task' : ''}`;
+      const isMilestone = task.milestone === true;
+      bar.className = `task-bar level-${task.level}${isParent ? ' parent-task' : ''}${isMilestone ? ' milestone' : ''}`;
       bar.draggable = false;
       bar.dataset.taskId = task.id;
       if (task.color && BAR_COLOR_PRESETS[task.color]) {
@@ -1305,8 +1315,13 @@
       }
       const startOff = dayDiff(projectStartDate, parseLocalDate(task.start));
       const dur = dayDiff(parseLocalDate(task.start), parseLocalDate(task.end)) + 1;
-      bar.style.left = (startOff * dayWidth) + 'px';
-      bar.style.width = (dur * dayWidth - 4) + 'px';
+      if (isMilestone) {
+        bar.style.left = (startOff * dayWidth + dayWidth / 2 - 10) + 'px';
+        bar.style.width = '20px';
+      } else {
+        bar.style.left = (startOff * dayWidth) + 'px';
+        bar.style.width = (dur * dayWidth - 4) + 'px';
+      }
       const statusDef = TASK_STATUSES[task.status || ''];
       const stripeColor = (statusDef && statusDef.color) || '';
       const statusStripeHtml = stripeColor ? `<div class="status-stripe" style="background:${stripeColor}"></div>` : '';
@@ -1465,7 +1480,7 @@
     }
 
     function startDragMove(e, task) { if (e.button !== 0) return; e.preventDefault(); e.stopPropagation(); dragPending = true; dragPendingType = 'move'; dragPendingTask = task; dragPendingStartX = e.clientX; dragPendingSide = null; }
-    function startResize(e, task, side) { if (e.button !== 0) return; e.preventDefault(); e.stopPropagation(); dragPending = true; dragPendingType = 'resize-' + side; dragPendingTask = task; dragPendingStartX = e.clientX; dragPendingSide = side; }
+    function startResize(e, task, side) { if (e.button !== 0 || task.milestone) return; e.preventDefault(); e.stopPropagation(); dragPending = true; dragPendingType = 'resize-' + side; dragPendingTask = task; dragPendingStartX = e.clientX; dragPendingSide = side; }
     function promotePendingDrag() { isDragging = true; dragType = dragPendingType; dragTask = dragPendingTask; dragStartX = dragPendingStartX; dragStartDate = parseLocalDate(dragTask.start); dragEndDate = parseLocalDate(dragTask.end); dragOriginalStart = null; dragOriginalEnd = null; document.querySelector(`.task-bar[data-task-id="${dragTask.id}"]`)?.classList.add('dragging'); dragPending = false; dragPendingType = null; dragPendingTask = null; }
     function startDepDrag(e, task) { if (e.button !== 0) return; e.preventDefault(); e.stopPropagation(); isDragging = true; dragType = 'dependency'; dependencyStartTask = task; const bar = document.querySelector(`.task-bar[data-task-id="${task.id}"]`), rect = bar.getBoundingClientRect(); const line = document.getElementById('tempDependencyLine'); line.style.display = 'block'; line.setAttribute('x1', rect.right); line.setAttribute('y1', rect.top + rect.height / 2); line.setAttribute('x2', e.clientX); line.setAttribute('y2', e.clientY); }
     function cancelDepDrag() { if (dragType === 'dependency') { document.getElementById('tempDependencyLine').style.display = 'none'; isDragging = false; dragType = null; dependencyStartTask = null; } }
@@ -1599,6 +1614,7 @@
       document.getElementById('taskProgress').value = 0;
       document.getElementById('taskDependencies').value = '';
       document.getElementById('taskAutoRollup').checked = true;
+      document.getElementById('taskMilestone').checked = false;
       document.getElementById('taskNotes').value = '';
       document.getElementById('deleteTaskBtn').style.display = 'none';
       document.getElementById('taskHidden').checked = false;
@@ -1621,6 +1637,7 @@
       document.getElementById('taskProgress').value = t.progress || 0;
       document.getElementById('taskDependencies').value = (t.dependencies || []).map(depId => { const dt = tasks.find(x => x.id === depId); return dt ? dt.wbs : depId; }).join(', ');
       document.getElementById('taskAutoRollup').checked = t.autoRollup !== false;
+      document.getElementById('taskMilestone').checked = t.milestone || false;
       document.getElementById('taskNotes').value = t.notes || '';
       document.getElementById('deleteTaskBtn').style.display = 'block';
       document.getElementById('taskHidden').checked = t.hidden || false;
@@ -1648,6 +1665,7 @@
         progress: parseInt(document.getElementById('taskProgress').value) || 0,
         dependencies: document.getElementById('taskDependencies').value.split(',').map(d => d.trim()).filter(d => d).map(wbs => { const dt = tasks.find(x => String(x.wbs) === wbs); return dt ? dt.id : wbs; }),
         autoRollup: document.getElementById('taskAutoRollup').checked,
+        milestone: document.getElementById('taskMilestone').checked || false,
         status: document.getElementById('taskStatus').value || '',
         color: document.getElementById('taskColor').value || null,
         notes: document.getElementById('taskNotes').value,
@@ -1700,6 +1718,7 @@
       document.getElementById('taskProgress').value = 0;
       document.getElementById('taskDependencies').value = '';
       document.getElementById('taskAutoRollup').checked = false;
+      document.getElementById('taskMilestone').checked = false;
       document.getElementById('taskNotes').value = '';
       document.getElementById('deleteTaskBtn').style.display = 'none';
       document.getElementById('taskModal').classList.add('visible');
