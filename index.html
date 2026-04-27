@@ -1693,6 +1693,7 @@
       tasks = tasks.filter(x => !deleteIds.has(x.id));
       tasks.forEach(x => { if (x.dependencies) x.dependencies = x.dependencies.filter(d => !deleteIds.has(d)); });
       if (tasksRef) {
+        performAutoRollup();
         const updates = {};
         toDelete.forEach(x => { updates[x.id] = null; });
         tasks.forEach(x => { const { id: tid, ...d } = x; updates[tid] = d; });
@@ -1741,6 +1742,7 @@
       tasks = tasks.filter(x => !deleteIds.has(x.id));
       tasks.forEach(x => { if (x.dependencies) x.dependencies = x.dependencies.filter(d => !deleteIds.has(d)); });
       if (tasksRef) {
+        performAutoRollup();
         const updates = {};
         toDelete.forEach(x => { updates[x.id] = null; });
         tasks.forEach(x => { const { id: tid, ...d } = x; updates[tid] = d; });
@@ -2421,6 +2423,7 @@
 
       // Save all to Firebase atomically
       if (!skipSave && tasksRef) {
+        performAutoRollup();
         const updates = {};
         tasks.forEach(t => { const { id, ...d } = t; updates[id] = d; });
         tasksRef.update(updates);
