@@ -2936,8 +2936,8 @@
       }
 
       // The task directly above the insertion gap
-      const taskAboveRow = insertAfterIdx >= 0 ? rows[insertAfterIdx] : null;
-      const taskAbove = taskAboveRow ? tasks.find(t => t.id === taskAboveRow.dataset.taskId) : null;
+      let taskAboveRow = insertAfterIdx >= 0 ? rows[insertAfterIdx] : null;
+      let taskAbove = taskAboveRow ? tasks.find(t => t.id === taskAboveRow.dataset.taskId) : null;
 
       // 2. Calculate target level RELATIVE to drag start position.
       //    Dragging straight down = keep original level.
@@ -2951,6 +2951,19 @@
 
       // At the very top of list, force level 1
       if (!taskAbove) targetLevel = 1;
+
+      // If dropping at or above taskAbove's level, advance past taskAbove's
+      // descendants so they don't get re-parented to the dragged subtree.
+      if (taskAbove && targetLevel <= (taskAbove.level || 1)) {
+        const aboveWbs = String(taskAbove.wbs);
+        while (insertAfterIdx + 1 < rows.length) {
+          const nextTask = tasks.find(t => t.id === rows[insertAfterIdx + 1].dataset.taskId);
+          if (!nextTask || !String(nextTask.wbs).startsWith(aboveWbs + '.')) break;
+          insertAfterIdx++;
+        }
+        taskAboveRow = rows[insertAfterIdx];
+        taskAbove = tasks.find(t => t.id === taskAboveRow.dataset.taskId);
+      }
 
       // 3. Position the blue indicator line at the gap
       if (dragIndicatorLine) {
