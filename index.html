@@ -1752,16 +1752,48 @@
     }
     function toggleCollapseContext() { if (contextTaskId) { if (collapsedIds.has(contextTaskId)) { collapsedIds.delete(contextTaskId); } else { collapsedIds.add(contextTaskId); } render(); } }
 
-    function saveTaskToDb(task) { if (tasksRef) { const { id, ...d } = task; tasksRef.child(id).set(d); } }
+    function saveTaskToDb(task) {
+      if (!tasksRef) return;
+      // Roll up first so any ancestor date/status changes piggyback on this write.
+      // Without this, a child save can leave parents stale until the next render's
+      // _pendingAutoUpdates write completes — which can lose the race against the
+      // child write's on('value') callback and leave Firebase with stale parent dates.
+      const beforeMap = {};
+      tasks.forEach(t => { beforeMap[t.id] = { start: t.start, end: t.end, duration: t.duration, progress: t.progress, status: t.status }; });
+      performAutoRollup();
+      const updates = {};
+      const { id: tid, ...taskData } = task;
+      updates[tid] = taskData;
+      tasks.forEach(t => {
+        if (t.id === task.id) return;
+        const b = beforeMap[t.id]; if (!b) return;
+        if (b.start !== t.start || b.end !== t.end || b.duration !== t.duration || b.progress !== t.progress || b.status !== t.status) {
+          updates[t.id + '/start'] = t.start;
+          updates[t.id + '/end'] = t.end;
+          updates[t.id + '/duration'] = t.duration;
+          updates[t.id + '/progress'] = t.progress;
+          updates[t.id + '/status'] = t.status || '';
+        }
+      });
+      tasksRef.update(updates);
+    }
 
     // ========== DEPENDENCIES ==========
     function applyDependencyShifts_() {
       const idMap = {}; tasks.forEach(t => idMap[t.id] = t);
+      // Parent tasks (with children) have dates derived from rollup, so shifting
+      // them via dependencies fights the rollup and produces flapping mismatches.
+      const hasChildren = new Set();
+      tasks.forEach(t => {
+        const w = String(t.wbs);
+        tasks.forEach(c => { if (c.id !== t.id && String(c.wbs).startsWith(w + '.')) hasChildren.add(t.id); });
+      });
       let anyShifted = false, changed = true, iter = 0;
       while (changed && iter < 100) {
         changed = false; iter++;
         tasks.forEach(task => {
           if (!task.dependencies?.length) return;
+          if (hasChildren.has(task.id)) return; // parent dates come from rollup, not deps
           let maxEnd = null, blockingDep = null;
           const taskWbs = String(task.wbs);
           task.dependencies.forEach(depId => {
@@ -2590,6 +2622,7 @@
       tasks = tasks.filter(x => !deleteIds.has(x.id));
       tasks.forEach(x => { if (x.dependencies) x.dependencies = x.dependencies.filter(d => !deleteIds.has(d)); });
       recalculateWBS(true);
+      performAutoRollup();
       if (tasksRef) {
         const updates = {};
         toDelete.forEach(x => { updates[x.id] = null; });
@@ -3040,7 +3073,8 @@
         // Rebuild all WBS numbers from the level structure
         rebuildAllWbs();
 
-        // Persist atomically
+        // Persist atomically — roll up first so parent dates reflect children
+        performAutoRollup();
         if (tasksRef) {
           const updates = {};
           tasks.forEach(t => { const { id, ...d } = t; updates[id] = d; });
