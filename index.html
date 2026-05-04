@@ -1040,6 +1040,16 @@
             tasks.forEach(t => { const { id, ...d } = t; updates[id] = d; });
             tasksRef.update(updates);
           }
+          // Self-heal milestones with mismatched end dates (single-point invariant)
+          const msFix = {};
+          tasks.forEach(t => {
+            if (t.milestone && t.start && t.end !== t.start) {
+              t.end = t.start; t.duration = 1;
+              msFix[t.id + '/end'] = t.start;
+              msFix[t.id + '/duration'] = 1;
+            }
+          });
+          if (Object.keys(msFix).length && tasksRef) tasksRef.update(msFix);
         } else {
           tasks = [];
         }
@@ -1656,16 +1666,20 @@
       const wbs = document.getElementById('taskWbs').value.trim();
       const name = document.getElementById('taskName').value.trim();
       if (!wbs || !name) { toast('WBS and Name required', 'error'); return; }
+      const isMilestone = document.getElementById('taskMilestone').checked || false;
+      const startVal = document.getElementById('taskStart').value;
+      // Milestones are single points — collapse end to start so they can't stretch over a range
+      const endVal = isMilestone ? startVal : document.getElementById('taskEnd').value;
       const data = {
         wbs, name, level: wbs.split('.').length,
         assigned: document.getElementById('taskAssigned').value,
-        start: document.getElementById('taskStart').value,
-        end: document.getElementById('taskEnd').value,
-        duration: dayDiff(parseLocalDate(document.getElementById('taskStart').value), parseLocalDate(document.getElementById('taskEnd').value)) + 1,
+        start: startVal,
+        end: endVal,
+        duration: dayDiff(parseLocalDate(startVal), parseLocalDate(endVal)) + 1,
         progress: parseInt(document.getElementById('taskProgress').value) || 0,
         dependencies: document.getElementById('taskDependencies').value.split(',').map(d => d.trim()).filter(d => d).map(wbs => { const dt = tasks.find(x => String(x.wbs) === wbs); return dt ? dt.id : wbs; }),
         autoRollup: document.getElementById('taskAutoRollup').checked,
-        milestone: document.getElementById('taskMilestone').checked || false,
+        milestone: isMilestone,
         status: document.getElementById('taskStatus').value || '',
         color: document.getElementById('taskColor').value || null,
         notes: document.getElementById('taskNotes').value,
@@ -1849,9 +1863,11 @@
           );
           if (!directChildren.length) return; // leaf task, skip
 
-          // Always roll up any task that has children
+          // Always roll up any task that has children.
+          // Milestones are single points (diamond renders at start) — only contribute
+          // their start date so a milestone can't stretch the parent past its visible diamond.
           const dates = directChildren.filter(c => c.start && c.end)
-            .flatMap(c => [parseLocalDate(c.start), parseLocalDate(c.end)]);
+            .flatMap(c => c.milestone ? [parseLocalDate(c.start)] : [parseLocalDate(c.start), parseLocalDate(c.end)]);
           if (!dates.length) return;
 
           const newStart = fmtDate(new Date(Math.min(...dates)));
