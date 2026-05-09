@@ -1,0 +1,2138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cannamatrix · R&D Pipeline Gantt</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Lato:wght@400;700;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<template id="__bundler_thumbnail" data-bg-color="#442B7D">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+        <stop offset="0" stop-color="#442B7D"/>
+        <stop offset="1" stop-color="#01B183"/>
+      </linearGradient>
+    </defs>
+    <rect width="1200" height="800" fill="url(#bg)"/>
+    <g fill="#fff" opacity="0.92">
+      <rect x="180" y="280" width="380" height="44" rx="10"/>
+      <rect x="220" y="360" width="540" height="44" rx="10" opacity="0.85"/>
+      <rect x="260" y="440" width="700" height="44" rx="10" opacity="0.7"/>
+      <rect x="300" y="520" width="520" height="44" rx="10" opacity="0.55"/>
+    </g>
+    <g fill="none" stroke="#fff" stroke-width="6" opacity="0.85">
+      <circle cx="600" cy="180" r="44"/>
+      <path d="M600 224 L600 270" stroke-dasharray="4 8"/>
+    </g>
+  </svg>
+</template>
+<style>
+  :root {
+    --cm-green: #01B183;
+    --cm-violet: #442B7D;
+    --cm-blue: #254690;
+    --cm-teal: #48CFCB;
+    --cm-purple: #6740C2;
+    --cm-gray: #F5F5F5;
+    --cm-ink: #16162A;
+    --cm-ink-soft: #4A4A63;
+    --cm-line: #E4E4EA;
+    --gradient: linear-gradient(95deg, #01B183 0%, #254690 55%, #442B7D 100%);
+    --shadow-sm: 0 1px 2px rgba(20,12,40,0.04), 0 2px 8px rgba(20,12,40,0.04);
+    --shadow-md: 0 6px 20px rgba(20,12,40,0.06), 0 1px 3px rgba(20,12,40,0.05);
+    --shadow-brand: 0 8px 28px rgba(68,43,125,0.18);
+    --ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+    /* Status palette — kept hue-distinct, all soft & on-brand */
+    --st-prep-bg: #EEEAF6;
+    --st-prep-fg: #6740C2;
+    --st-active-bg: #DAF5EC;
+    --st-active-fg: #01875F;
+    --st-lab-bg: #DAF3F2;
+    --st-lab-fg: #0E8C88;
+    --st-write-bg: #E4DEF1;
+    --st-write-fg: #442B7D;
+    --st-submit-grad: linear-gradient(95deg, #01B183, #254690 60%, #442B7D);
+    --st-submit-fg: #fff;
+    --st-deploy-bg: #C9EEDF;
+    --st-deploy-fg: #016749;
+    --st-validate-bg: #FFE0E9;
+    --st-validate-fg: #B0306E;
+    --st-gate-bg: #FFE7C9;
+    --st-gate-fg: #B36100;
+    --st-grant-bg: #F1E0F4;
+    --st-grant-fg: #7B2C8E;
+    --st-grow-bg: #E5F4DC;
+    --st-grow-fg: #3F7A1C;
+    --st-pheno-bg: #DCEDF6;
+    --st-pheno-fg: #1B5C82;
+    --st-irb-bg: #FFF1D6;
+    --st-irb-fg: #8A5A00;
+    --st-enroll-bg: #DDE4F5;
+    --st-enroll-fg: #2A3F8E;
+    --st-live-bg: #D8F1E8;
+    --st-live-fg: #017A57;
+    --st-build-bg: #EFE3D6;
+    --st-build-fg: #7A4A1A;
+
+    --col-label: 320px;
+    --col-q: 56px;
+    --row-h: 56px;
+    --row-h-group: 52px;
+    --total-q: 40;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    overflow-x: hidden;
+    font-family: "Lato", system-ui, sans-serif;
+    color: var(--cm-ink);
+    background: #FAFAFB;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  h1, h2, h3, h4 { font-family: "Poppins", sans-serif; font-weight: 700; letter-spacing: -0.01em; margin: 0; }
+  .mono { font-family: "JetBrains Mono", monospace; }
+
+  /* ─────────── HERO ─────────── */
+  html { scroll-behavior: smooth; }
+  .hero {
+    position: relative;
+    width: 100%;
+    z-index: 5;
+    background: var(--gradient);
+    color: #fff;
+    padding: 18px 40px 0px;
+    overflow: hidden;
+  }
+  .jump-today {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 999px;
+    background: var(--cm-ink);
+    color: #fff;
+    font-family: "Poppins", sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 12px 32px rgba(15, 17, 28, 0.32);
+    opacity: 0;
+    transform: translateY(8px);
+    pointer-events: none;
+    transition: opacity 220ms ease, transform 220ms ease;
+  }
+  .jump-today.show {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+  .jump-today:hover { background: var(--cm-green); }
+  .jump-today .jt-arrow { font-size: 16px; line-height: 1; }
+  .hero::after {
+    content: "";
+    position: absolute;
+    right: -100px;
+    top: -60px;
+    width: 360px;
+    height: 360px;
+    background: url("assets/logomark-white.png") center/contain no-repeat;
+    opacity: 0.08;
+    pointer-events: none;
+  }
+  .hero-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 32px;
+    position: relative;
+    z-index: 1;
+  }
+  .hero-logo {
+    height: 60px;
+    width: auto;
+    display: block;
+  }
+  .hero-meta {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    font-family: "Poppins", sans-serif;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-weight: 600;
+  }
+  .hero-meta .pill {
+    border: 1px solid rgba(255,255,255,0.4);
+    border-radius: 999px;
+    padding: 6px 14px;
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(6px);
+  }
+  .hero-title {
+    margin-top: 10px;
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: baseline;
+    gap: 22px;
+    flex-wrap: wrap;
+  }
+  .hero-h1 {
+    font-size: 56px;
+    line-height: 1;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: -0.02em;
+    margin: 0;
+  }
+  .hero-sublabel {
+    font-family: "Poppins", sans-serif;
+    font-size: 16px;
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    font-weight: 600;
+    opacity: 0.85;
+    padding-bottom: 6px;
+  }
+  .hero-graphic {
+    flex-basis: 100%;
+    margin-top: 4px;
+    margin-bottom: -24px;
+    display: flex;
+    align-items: center;
+  }
+  .hero-graphic svg { display: block; max-width: 1200px; width: 100%; height: auto; }
+  .hero-graphic a { cursor: pointer; }
+  .hero-graphic a rect { transition: filter .15s ease; }
+  .hero-graphic a:hover rect { filter: brightness(1.25); }
+  .hero-count {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding: 8px 18px;
+    border: 1px solid rgba(255,255,255,0.32);
+    border-radius: 999px;
+    background: rgba(255,255,255,0.08);
+    backdrop-filter: blur(6px);
+  }
+  .hero-count .num {
+    font-family: "Poppins", sans-serif;
+    font-weight: 800;
+    font-size: 28px;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+  .hero-count .lbl {
+    font-family: "Poppins", sans-serif;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-weight: 600;
+    opacity: 0.88;
+  }
+  /* ─────────── PAGE BODY ─────────── */
+  .page {
+    padding: 8px 24px 64px;
+    margin-top: 0;
+  }
+  .panel {
+    background: #fff;
+    border-radius: 24px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--cm-line);
+  }
+
+  /* ─────────── LEGEND ─────────── */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 14px;
+    padding: 20px 28px;
+    align-items: center;
+    border-bottom: 1px solid var(--cm-line);
+    background: #fff;
+    position: sticky;
+    top: 0;
+    z-index: 6;
+    box-sizing: border-box;
+  }
+  .legend-label {
+    font-family: "Poppins", sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--cm-ink-soft);
+    margin-right: 6px;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 26px;
+    padding: 0 12px;
+    border-radius: 999px;
+    font-family: "Poppins", sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .chip .dot { width: 8px; height: 8px; border-radius: 999px; background: currentColor; }
+  .chip-prep   { background: var(--st-prep-bg);   color: var(--st-prep-fg); }
+  .chip-active { background: var(--st-active-bg); color: var(--st-active-fg); }
+  .chip-lab    { background: var(--st-lab-bg);    color: var(--st-lab-fg); }
+  .chip-write  { background: var(--st-write-bg);  color: var(--st-write-fg); }
+  .chip-submit { background: var(--st-submit-grad); color: #fff; }
+  .chip-deploy { background: var(--st-deploy-bg); color: var(--st-deploy-fg); }
+  .chip-validate { background: var(--st-validate-bg); color: var(--st-validate-fg); }
+  .chip-gate   { background: var(--st-gate-bg);   color: var(--st-gate-fg); }
+  .chip-grant  { background: var(--st-grant-bg);  color: var(--st-grant-fg); }
+  .chip-irb    { background: var(--st-irb-bg);    color: var(--st-irb-fg); }
+
+  /* ─────────── GANTT ─────────── */
+  .gantt-wrap {
+    background: #fff;
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch;
+  }
+  .gantt {
+    min-width: calc(var(--col-label) + var(--total-q) * var(--col-q));
+    position: relative;
+  }
+  .timeline-head {
+    position: relative;
+    z-index: 5;
+    background: #fff;
+    border-bottom: 1px solid var(--cm-line);
+  }
+  .timeline-years, .timeline-quarters {
+    display: grid;
+    grid-template-columns: var(--col-label) repeat(40, var(--col-q));
+  }
+  .timeline-years .yr {
+    grid-row: 1;
+    font-family: "Poppins", sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--cm-violet);
+    padding: 14px 12px 6px;
+    text-align: center;
+    border-right: 1px solid var(--cm-line);
+  }
+  .timeline-years .yr.first { border-left: 1px solid var(--cm-line); }
+  .timeline-years .label-cell {
+    padding: 14px 24px 6px;
+    font-family: "Poppins", sans-serif;
+    position: sticky;
+    left: 0;
+    background: #fff;
+    z-index: 2;
+  }
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--cm-ink-soft);
+    font-weight: 600;
+  }
+  .timeline-quarters .q {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--cm-ink-soft);
+    text-align: center;
+    padding: 4px 0 12px;
+    border-right: 1px solid var(--cm-line);
+  }
+  .timeline-quarters .q.first-of-year { border-left: 1px solid var(--cm-line); }
+  .timeline-quarters .label-cell { padding: 4px 24px 12px; position: sticky; left: 0; background: #fff; z-index: 2; }
+
+  /* Group header */
+  .group {
+    display: grid;
+    grid-template-columns: var(--col-label) 1fr;
+    align-items: center;
+    height: var(--row-h-group);
+    border-bottom: 1px solid var(--cm-line);
+  }
+  .group-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 24px;
+    height: 100%;
+    border-right: 1px solid var(--cm-line);
+    position: sticky;
+    left: 0;
+    background: #fff;
+    z-index: 2;
+  }
+  .group-bar {
+    width: 4px;
+    height: 22px;
+    border-radius: 2px;
+  }
+  .group-name {
+    font-family: "Poppins", sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--cm-ink);
+  }
+  .group-tag {
+    margin-left: auto;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    color: var(--cm-ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .group-rail {
+    height: 100%;
+    background-image: linear-gradient(to right, var(--cm-line) 1px, transparent 1px);
+    background-size: var(--col-q) 100%;
+    background-position: 0 0;
+  }
+
+  /* Task row */
+  .row {
+    display: grid;
+    grid-template-columns: var(--col-label) 1fr;
+    height: var(--row-h);
+    border-bottom: 1px solid #F1F1F4;
+    transition: background 220ms var(--ease);
+  }
+  .row:hover { background: #FBFAFC; }
+  .row-label {
+    display: flex;
+    align-items: center;
+    position: sticky;
+    left: 0;
+    background: #fff;
+    z-index: 2;
+    gap: 12px;
+    padding: 0 24px;
+    border-right: 1px solid var(--cm-line);
+    height: 100%;
+    overflow: hidden;
+  }
+  .row-id {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--cm-violet);
+    background: #F1EDF8;
+    padding: 3px 8px;
+    border-radius: 6px;
+    flex-shrink: 0;
+    letter-spacing: 0.02em;
+  }
+  .row-name {
+    font-family: "Lato", sans-serif;
+    font-size: 12.5px;
+    line-height: 1.32;
+    color: var(--cm-ink);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .row-name .muted { color: var(--cm-ink-soft); font-size: 11.5px; display: block; }
+  .row-track {
+    position: relative;
+    height: 100%;
+    background-image:
+      linear-gradient(to right, #F1F1F4 1px, transparent 1px),
+      linear-gradient(to right, transparent calc(var(--col-q) * 4 - 1px), rgba(68,43,125,0.06) calc(var(--col-q) * 4 - 1px), rgba(68,43,125,0.06) calc(var(--col-q) * 4));
+    background-size: var(--col-q) 100%, calc(var(--col-q) * 4) 100%;
+    background-position: 0 0, 0 0;
+  }
+
+  /* Bars */
+  .bar {
+    position: absolute;
+    top: 8px;
+    bottom: 8px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 10px;
+    font-family: "Poppins", sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transition: transform 140ms var(--ease), filter 140ms var(--ease), box-shadow 140ms var(--ease);
+    cursor: default;
+    overflow: hidden;
+    white-space: nowrap;
+    z-index: 1;
+  }
+  .bar:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.04);
+    box-shadow: var(--shadow-sm);
+    z-index: 2;
+  }
+  .bar.prep   { background: var(--st-prep-bg);   color: var(--st-prep-fg); }
+  .bar.active { background: var(--st-active-bg); color: var(--st-active-fg); }
+  .bar.lab    { background: var(--st-lab-bg);    color: var(--st-lab-fg); }
+  .bar.write  { background: var(--st-write-bg);  color: var(--st-write-fg); }
+  .bar.submit { background: var(--st-submit-grad); color: #fff; box-shadow: var(--shadow-brand); }
+  .bar.deploy { background: var(--st-deploy-bg); color: var(--st-deploy-fg); }
+  .bar.validate { background: var(--st-validate-bg); color: var(--st-validate-fg); }
+  .bar.gate   { background: var(--st-gate-bg);   color: var(--st-gate-fg); }
+  .bar.grant  { background: var(--st-grant-bg);  color: var(--st-grant-fg); }
+  .bar.grow   { background: var(--st-grow-bg);   color: var(--st-grow-fg); }
+  .bar.pheno  { background: var(--st-pheno-bg);  color: var(--st-pheno-fg); }
+  .bar.irb    { background: var(--st-irb-bg);    color: var(--st-irb-fg); }
+  .bar.enroll { background: var(--st-enroll-bg); color: var(--st-enroll-fg); }
+  .bar.live   { background: var(--st-live-bg);   color: var(--st-live-fg); }
+  .bar.build  { background: var(--st-build-bg);  color: var(--st-build-fg); }
+
+  /* Publish star marker */
+  .bar.submit { font-size: 9px; letter-spacing: 0.04em; padding: 0 4px; }
+
+  /* Group accent colors */
+  .grp-pan   { --grp: var(--cm-violet); background: linear-gradient(to right, rgba(68,43,125,0.05), transparent 60%); }
+  .grp-gp    { --grp: var(--cm-green);  background: linear-gradient(to right, rgba(1,177,131,0.06), transparent 60%); }
+  .grp-spin  { --grp: var(--cm-purple); background: linear-gradient(to right, rgba(103,64,194,0.05), transparent 60%); }
+  .grp-exp   { --grp: var(--cm-blue);   background: linear-gradient(to right, rgba(37,70,144,0.05), transparent 60%); }
+  .grp-epi   { --grp: var(--cm-teal);   background: linear-gradient(to right, rgba(72,207,203,0.08), transparent 60%); }
+  .grp-sci   { --grp: #B36100;          background: linear-gradient(to right, rgba(179,97,0,0.05), transparent 60%); }
+  .grp-cd    { --grp: var(--cm-green);  background: linear-gradient(to right, rgba(1,177,131,0.05), transparent 60%); }
+  .grp-mc    { --grp: var(--cm-blue);   background: linear-gradient(to right, rgba(37,70,144,0.05), transparent 60%); }
+  .grp-cfl   { --grp: var(--cm-purple); background: linear-gradient(to right, rgba(103,64,194,0.05), transparent 60%); }
+  .grp-vsc   { --grp: #0E8C88;          background: linear-gradient(to right, rgba(14,140,136,0.06), transparent 60%); }
+  .group-bar { background: var(--grp); }
+
+  /* Year band shading on track */
+  .row-track.shade-odd::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image: repeating-linear-gradient(to right,
+      rgba(68,43,125,0.025) 0,
+      rgba(68,43,125,0.025) calc(var(--col-q) * 4),
+      transparent calc(var(--col-q) * 4),
+      transparent calc(var(--col-q) * 8));
+  }
+
+  /* Today marker */
+  .today {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 0;
+    border-left: 2px dashed var(--cm-green);
+    z-index: 0;
+    pointer-events: none;
+  }
+  .today-flag {
+    position: absolute;
+    top: -22px;
+    transform: translateX(-50%);
+    background: var(--cm-green);
+    color: #fff;
+    font-family: "Poppins", sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    padding: 3px 8px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  /* Section divider in gantt */
+  .section-divider {
+    height: 8px;
+    background: linear-gradient(to bottom, #FAFAFB, #fff);
+    border-bottom: 1px solid var(--cm-line);
+  }
+
+  /* ─────────── FOOTNOTES ─────────── */
+  .notes {
+    margin-top: 28px;
+    padding: 28px 32px;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--cm-line);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+  .note h4 {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: var(--cm-violet);
+    margin-bottom: 10px;
+    font-weight: 700;
+  }
+  .note p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--cm-ink-soft);
+  }
+  .note p strong { color: var(--cm-ink); font-weight: 700; }
+
+  .footer-meta {
+    margin-top: 32px;
+    padding: 20px 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--cm-ink-soft);
+    font-size: 12px;
+    font-family: "Poppins", sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 500;
+  }
+
+  @media (max-width: 1100px) {
+    .hero { padding: 18px 24px 44px; }
+    .hero-h1 { font-size: 40px; }
+    .page { padding: 0 12px 48px; }
+  }
+
+  /* ─────────── SYNOPSIS MODAL ─────────── */
+  .row.has-synopsis { cursor: pointer; }
+  .row.grp-pan.has-synopsis:hover  { background: rgba(68,43,125,0.06); }
+  .row.grp-gp.has-synopsis:hover   { background: rgba(1,177,131,0.07); }
+  .row.grp-spin.has-synopsis:hover { background: rgba(103,64,194,0.07); }
+  .row.grp-exp.has-synopsis:hover  { background: rgba(37,70,144,0.06); }
+  .row.grp-epi.has-synopsis:hover  { background: rgba(72,207,203,0.10); }
+  .row.grp-sci.has-synopsis:hover  { background: rgba(179,97,0,0.07); }
+  .row.grp-cd.has-synopsis:hover   { background: rgba(1,177,131,0.06); }
+  .row.grp-mc.has-synopsis:hover   { background: rgba(37,70,144,0.06); }
+  .row.grp-cfl.has-synopsis:hover  { background: rgba(103,64,194,0.06); }
+  .row.grp-vsc.has-synopsis:hover  { background: rgba(14,140,136,0.08); }
+  .row.has-synopsis:focus-visible {
+    outline: 2px solid var(--cm-violet);
+    outline-offset: -2px;
+  }
+
+  .synopsis-modal {
+    position: fixed; inset: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(15, 17, 28, 0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 180ms var(--ease);
+    padding: 28px 20px;
+  }
+  .synopsis-modal.open { opacity: 1; pointer-events: auto; }
+  .synopsis-card {
+    position: relative;
+    background: #fff;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 720px;
+    max-height: calc(100vh - 56px);
+    overflow: hidden;
+    box-shadow: var(--shadow-brand), 0 20px 60px rgba(15,17,28,0.32);
+    transform: translateY(12px) scale(0.98);
+    transition: transform 180ms var(--ease);
+    display: flex;
+    flex-direction: column;
+  }
+  .synopsis-modal.open .synopsis-card { transform: translateY(0) scale(1); }
+  .synopsis-card::before {
+    content: "";
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+    background: var(--gradient);
+  }
+  .synopsis-close {
+    position: absolute;
+    top: 14px; right: 14px;
+    width: 36px; height: 36px;
+    border: none;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--cm-ink-soft);
+    font-size: 20px;
+    line-height: 1;
+    font-family: "Poppins", sans-serif;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 140ms var(--ease), color 140ms var(--ease);
+    z-index: 2;
+  }
+  .synopsis-close:hover, .synopsis-close:focus-visible {
+    background: #F1F1F4;
+    color: var(--cm-ink);
+    outline: none;
+  }
+  .synopsis-header {
+    padding: 34px 60px 20px 40px;
+    border-bottom: 1px solid var(--cm-line);
+    flex-shrink: 0;
+  }
+  .synopsis-track-tag {
+    display: inline-block;
+    font-family: "Poppins", sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    border-radius: 999px;
+    margin-bottom: 14px;
+  }
+  .synopsis-track-tag.tt-pan  { background: var(--st-write-bg);    color: var(--st-write-fg); }
+  .synopsis-track-tag.tt-gp   { background: var(--st-active-bg);   color: var(--st-active-fg); }
+  .synopsis-track-tag.tt-spin { background: var(--st-prep-bg);     color: var(--st-prep-fg); }
+  .synopsis-track-tag.tt-exp  { background: var(--st-enroll-bg);   color: var(--st-enroll-fg); }
+  .synopsis-track-tag.tt-epi  { background: var(--st-lab-bg);      color: var(--st-lab-fg); }
+  .synopsis-track-tag.tt-sci  { background: var(--st-gate-bg);     color: var(--st-gate-fg); }
+  .synopsis-track-tag.tt-cd   { background: var(--st-grow-bg);     color: var(--st-grow-fg); }
+  .synopsis-track-tag.tt-mc   { background: var(--st-validate-bg); color: var(--st-validate-fg); }
+  .synopsis-track-tag.tt-cfl  { background: var(--st-lab-bg);      color: var(--st-lab-fg); }
+  .synopsis-track-tag.tt-vsc  { background: var(--st-gate-bg);     color: var(--st-gate-fg); }
+  .synopsis-id {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--cm-violet);
+    background: #F1EDF8;
+    padding: 4px 10px;
+    border-radius: 6px;
+    display: inline-block;
+    margin-right: 10px;
+    margin-bottom: 12px;
+    letter-spacing: 0.02em;
+    vertical-align: middle;
+  }
+  .synopsis-title {
+    font-family: "Poppins", sans-serif;
+    font-weight: 700;
+    font-size: 24px;
+    line-height: 1.25;
+    color: var(--cm-ink);
+    letter-spacing: -0.01em;
+    margin-top: 4px;
+  }
+  .synopsis-body {
+    padding: 24px 40px 28px;
+    overflow-y: auto;
+    flex: 1 1 auto;
+  }
+  .synopsis-section { margin-bottom: 22px; }
+  .synopsis-section:last-child { margin-bottom: 0; }
+  .synopsis-label {
+    font-family: "Poppins", sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.2em;
+    color: var(--cm-ink-soft);
+    margin-bottom: 8px;
+  }
+  .synopsis-section p {
+    margin: 0;
+    font-family: "Lato", sans-serif;
+    font-size: 14.5px;
+    line-height: 1.6;
+    color: var(--cm-ink);
+  }
+  .synopsis-section.q-section p {
+    font-style: italic;
+    color: var(--cm-ink);
+    border-left: 3px solid var(--cm-green);
+    padding-left: 14px;
+  }
+  .synopsis-deliverables {
+    margin: 0;
+    padding-left: 20px;
+    list-style: disc;
+  }
+  .synopsis-deliverables li {
+    font-family: "Lato", sans-serif;
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--cm-ink);
+    margin-bottom: 6px;
+  }
+  .synopsis-deliverables li::marker { color: var(--cm-violet); }
+  .synopsis-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 40px 22px;
+    border-top: 1px solid var(--cm-line);
+    flex-shrink: 0;
+    background: #FAFAFB;
+  }
+  .synopsis-nav {
+    font-family: "Poppins", sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 9px 18px;
+    border-radius: 999px;
+    border: 1px solid var(--cm-line);
+    background: #fff;
+    color: var(--cm-ink);
+    cursor: pointer;
+    transition: background 140ms var(--ease), border-color 140ms var(--ease), color 140ms var(--ease);
+  }
+  .synopsis-nav:hover:not([disabled]),
+  .synopsis-nav:focus-visible:not([disabled]) {
+    background: var(--cm-violet);
+    border-color: var(--cm-violet);
+    color: #fff;
+    outline: none;
+  }
+  .synopsis-nav[disabled] {
+    opacity: 0.32;
+    pointer-events: none;
+    cursor: default;
+  }
+  body.modal-open { overflow: hidden; }
+
+  @media (max-width: 720px) {
+    .synopsis-modal { padding: 0; align-items: stretch; }
+    .synopsis-card {
+      max-width: 100%;
+      max-height: 100vh;
+      border-radius: 0;
+    }
+    .synopsis-header { padding: 24px 52px 16px 22px; }
+    .synopsis-body { padding: 18px 22px 22px; }
+    .synopsis-footer { padding: 14px 18px 18px; }
+    .synopsis-title { font-size: 20px; }
+    .synopsis-nav { padding: 8px 12px; font-size: 11px; letter-spacing: 0.04em; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ─────────── HERO ─────────── -->
+<header class="hero">
+  <div class="hero-row">
+    <img class="hero-logo" src="assets/logo-horizontal-white.png" alt="Cannamatrix">
+    <div class="hero-meta">
+      <div class="hero-count"><span class="num">52</span><span class="lbl">Papers planned across 10 years</span></div>
+      <span class="pill">v1.0 · May 2026</span>
+    </div>
+  </div>
+
+  <div class="hero-title">
+    <h1 class="hero-h1">Research &amp; Development</h1>
+    <div class="hero-sublabel">Pipeline Visionary Gantt</div>
+    <div class="hero-graphic" aria-hidden="true">
+      <svg viewBox="0 0 1200 320" preserveAspectRatio="xMidYMid meet">
+        <defs>
+          <linearGradient id="trunkG" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0" stop-color="#fff" stop-opacity="0.98"/>
+            <stop offset="1" stop-color="#fff" stop-opacity="0.85"/>
+          </linearGradient>
+          <marker id="arrh" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M0 0 L 10 5 L 0 10 z" fill="rgba(255,255,255,0.92)"/>
+          </marker>
+          <marker id="arrh-fb" viewBox="0 0 10 10" refX="0" refY="5" markerWidth="9" markerHeight="9" orient="auto-start-reverse">
+            <path d="M0 0 L 10 5 L 0 10 z" fill="#FFD56B"/>
+          </marker>
+        </defs>
+
+        <!-- PAN core trunk -->
+        <a href="#thread-pan">
+        <rect x="10" y="148" rx="22" ry="22" width="150" height="48" fill="url(#trunkG)"/>
+        <text x="85" y="170" text-anchor="middle" font-family="Poppins,sans-serif" font-weight="700" font-size="12" letter-spacing="1.6" fill="#442B7D">PANGENOMICS</text>
+        <text x="85" y="186" text-anchor="middle" font-family="Poppins,sans-serif" font-weight="700" font-size="12" letter-spacing="1.6" fill="#01B183">CORE</text>
+        </a>
+
+        <!-- PAN → GP -->
+        <path d="M160 172 L 220 172" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="2" stroke-linecap="round"/>
+
+        <!-- GP node -->
+        <a href="#thread-gp">
+          <rect x="220" y="148" rx="22" ry="22" width="200" height="48" fill="rgba(255,255,255,0.3)" stroke="rgba(255,255,255,0.95)" stroke-width="1.4"/>
+          <text x="320" y="178" text-anchor="middle" font-family="Poppins,sans-serif" font-weight="700" font-size="13" letter-spacing="1.4" fill="#fff">GENOMIC PREDICTION</text>
+        </a>
+
+        <!-- GP → three branches -->
+        <g fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="2" stroke-linecap="round">
+          <path d="M420 172 C 450 172, 450 60, 480 60"/>
+          <path d="M420 172 L 480 172"/>
+          <path d="M420 172 C 450 172, 450 280, 480 280"/>
+        </g>
+
+        <!-- Branch parent: EXPLORATORY GENETICS -->
+        <a href="#thread-cfl">
+          <rect x="480" y="40" rx="18" ry="18" width="240" height="40" fill="rgba(255,255,255,0.22)" stroke="rgba(255,255,255,0.85)"/>
+          <text x="600" y="66" text-anchor="middle" font-family="Poppins,sans-serif" font-weight="700" font-size="12" letter-spacing="1.4" fill="#fff">EXPLORATORY GENETICS</text>
+        </a>
+
+        <!-- Branch parent: DNA LANGUAGE MODEL -->
+        <a href="#thread-pan">
+          <rect x="480" y="148" rx="22" ry="22" width="240" height="48" fill="rgba(255,213,107,0.18)" stroke="#FFD56B" stroke-width="1.4"/>
+          <text x="600" y="170" text-anchor="middle" font-family="Poppins,sans-serif" font-weight="700" font-size="11" letter-spacing="1.4" fill="#FFD56B">DNA LANGUAGE</text>
+          <text x="600" y="185" text-anchor="middle" font-family="Poppins,sans-serif" font-weight="700" font-size="11" letter-spacing="1.4" fill="#FFD56B">MODEL</text>
+        </a>
+
+        <!-- Branch parent: BREEDING -->
+        <a href="#thread-cd">
+          <rect x="480" y="260" rx="18" ry="18" width="240" height="40" fill="rgba(255,255,255,0.22)" stroke="rgba(255,255,255,0.85)"/>
+          <text x="600" y="286" text-anchor="middle" font-family="Poppins,sans-serif" font-weight="700" font-size="12" letter-spacing="1.4" fill="#fff">BREEDING</text>
+        </a>
+
+        <!-- EXPLORATORY → 3 leaves -->
+        <g fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.6" stroke-linecap="round">
+          <path d="M720 60 C 745 60, 745 18, 760 18"/>
+          <path d="M720 60 L 760 60"/>
+          <path d="M720 60 C 745 60, 745 102, 760 102"/>
+        </g>
+
+        <a href="#thread-sci">
+          <rect x="760" y="4" rx="14" ry="14" width="320" height="28" fill="rgba(255,255,255,0.16)" stroke="rgba(255,255,255,0.6)"/>
+          <text x="920" y="23" text-anchor="middle" font-family="Poppins,sans-serif" font-weight="700" font-size="12" letter-spacing="1.3" fill="#fff">SCI · IP</text>
+        </a>
+        <a href="#thread-cfl">
+          <rect x="760" y="46" rx="14" ry="14" width="320" height="28" fill="rgba(255,255,255,0.16)" stroke="rgba(255,255,255,0.6)"/>
+          <text x="920" y="65" text-anchor="middle" font-family="Poppins,sans-serif" font-weight="700" font-size="12" letter-spacing="1.3" fill="#fff">CANNAFLAVINS</text>
+        </a>
+        <a href="#thread-vsc">
+          <rect x="760" y="88" rx="14" ry="14" width="320" height="28" fill="rgba(255,255,255,0.16)" stroke="rgba(255,255,255,0.6)"/>
+          <text x="920" y="107" text-anchor="middle" font-family="Poppins,sans-serif" font-weight="700" font-size="12" letter-spacing="1.3" fill="#fff">VOLATILE SULFURS</text>
+        </a>
+
+        <!-- DNA LM → BIO WORLD MODEL -->
+        <line x1="720" y1="172" x2="760" y2="172" stroke="#FFD56B" stroke-width="2" marker-end="url(#arrh-fb)" stroke-linecap="round"/>
+
+        <a href="#thread-pan">
+          <rect x="760" y="136" rx="14" ry="14" width="400" height="72" fill="rgba(255,213,107,0.14)" stroke="#FFD56B" stroke-width="1.4"/>
+          <text x="960" y="154" text-anchor="middle" font-family="Poppins,sans-serif" font-weight="700" font-size="12" letter-spacing="1.4" fill="#FFD56B">BIO WORLD MODEL</text>
+          <g font-family="Poppins,sans-serif" font-weight="600" font-size="10" letter-spacing="0.8" fill="#FFE9A8">
+            <rect x="772" y="160" rx="6" ry="6" width="88" height="40" fill="rgba(255,213,107,0.18)" stroke="rgba(255,213,107,0.55)"/>
+            <text x="816" y="178" text-anchor="middle">SEQUENCE</text>
+            <text x="816" y="192" text-anchor="middle" font-size="8" opacity="0.85">L1</text>
+
+            <rect x="868" y="160" rx="6" ry="6" width="88" height="40" fill="rgba(255,213,107,0.18)" stroke="rgba(255,213,107,0.55)"/>
+            <text x="912" y="178" text-anchor="middle">EXPRESSION</text>
+            <text x="912" y="192" text-anchor="middle" font-size="8" opacity="0.85">L2</text>
+
+            <rect x="964" y="160" rx="6" ry="6" width="88" height="40" fill="rgba(255,213,107,0.18)" stroke="rgba(255,213,107,0.55)"/>
+            <text x="1008" y="178" text-anchor="middle">METABOLOME</text>
+            <text x="1008" y="192" text-anchor="middle" font-size="8" opacity="0.85">L3</text>
+
+            <rect x="1060" y="160" rx="6" ry="6" width="88" height="40" fill="rgba(255,213,107,0.18)" stroke="rgba(255,213,107,0.55)"/>
+            <text x="1104" y="178" text-anchor="middle">PHENOTYPE</text>
+            <text x="1104" y="192" text-anchor="middle" font-size="8" opacity="0.85">L4</text>
+          </g>
+        </a>
+
+        <!-- BWM 4-layer feedback loop back to GENOMIC PREDICTION -->
+        <path d="M960 208 C 960 252, 320 252, 320 211" fill="none" stroke="#FFD56B" stroke-width="2" stroke-dasharray="5 4" stroke-linecap="round" marker-end="url(#arrh-fb)" opacity="0.95"/>
+
+        <!-- BREEDING → CULTIVAR DESIGN → CLINICAL TRIALS -->
+        <line x1="720" y1="280" x2="760" y2="280" stroke="rgba(255,255,255,0.7)" stroke-width="1.8" stroke-linecap="round"/>
+
+        <a href="#thread-cd">
+          <rect x="760" y="264" rx="15" ry="15" width="220" height="32" fill="rgba(255,255,255,0.22)" stroke="rgba(255,255,255,0.75)"/>
+          <text x="870" y="285" text-anchor="middle" font-family="Poppins,sans-serif" font-weight="700" font-size="12" letter-spacing="1.3" fill="#fff">IDEAL CULTIVAR DESIGN</text>
+        </a>
+        <line x1="980" y1="280" x2="1010" y2="280" stroke="rgba(255,255,255,0.92)" stroke-width="2" marker-end="url(#arrh)" stroke-linecap="round"/>
+        <a href="#thread-mc">
+          <rect x="1010" y="264" rx="15" ry="15" width="180" height="32" fill="rgba(255,255,255,0.22)" stroke="rgba(255,255,255,0.75)"/>
+          <text x="1100" y="285" text-anchor="middle" font-family="Poppins,sans-serif" font-weight="700" font-size="12" letter-spacing="1.3" fill="#fff">CLINICAL TRIALS</text>
+        </a>
+      </svg>
+    </div>
+    </div>
+</header>
+
+<main class="page">
+  <div class="panel">
+
+    <!-- ─────────── LEGEND ─────────── -->
+    <div class="legend">
+      <span class="legend-label">Status</span>
+      <span class="chip chip-prep"><span class="dot"></span>Prep</span>
+      <span class="chip chip-active"><span class="dot"></span>Active</span>
+      <span class="chip chip-lab"><span class="dot"></span>Lab</span>
+      <span class="chip chip-write"><span class="dot"></span>Write</span>
+      <span class="chip chip-submit">★ Publish</span>
+      <span class="chip chip-validate"><span class="dot"></span>Validate</span>
+      <span class="chip chip-deploy"><span class="dot"></span>Deploy</span>
+      <span class="chip chip-gate"><span class="dot"></span>Gate</span>
+      <span class="chip chip-grant"><span class="dot"></span>Grant</span>
+      <span class="chip chip-irb"><span class="dot"></span>IRB</span>
+    </div>
+
+    <!-- ─────────── GANTT ─────────── -->
+    <div class="gantt-wrap">
+      <div class="gantt" id="gantt"></div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+/* ──────────────── PAPER SYNOPSES ──────────────── */
+// Track key → display name (used for the modal track tag)
+const TRACK_NAMES = {
+  pan: "Pangenomics Core",
+  gp: "GP Main Prediction Series",
+  spin: "GP Spinoffs · Sibling Papers",
+  exp: "Expression Atlases",
+  sci: "Signature Cultivar Index",
+  epi: "Epigenetics",
+  cd: "Ideal Cultivar Design Track",
+  mc: "Medical Comparative Track",
+  cfl: "Cannaflavins · Cross-Track",
+  vsc: "Volatile Sulfur · Cross-Track",
+};
+
+const SYNOPSES = {
+  "PAN-1": {
+    title: "First Cannabis Alliinase · structural method pilot",
+    background: "Alliinases catalyze volatile sulfur compound (VSC) formation in alliums but their existence in cannabis was only recently inferred. Cannamatrix's bioRxiv submission (Apr 28, 2026) proposed the first cannabis alliinase candidate via HMMER scan against the EH23a-anchored 20-haplotype Salk pangenome, followed by Boltz2 structural prediction and active-site comparison to allium references.",
+    question: "Does the proposed cannabis alliinase candidate show structural and active-site conservation with allium alliinases sufficient to support VSC biosynthesis?",
+    deliverables: [
+      "Published paper (P1, bioRxiv Apr 28, 2026; journal version follow-on)",
+      "Establishes the HMMER → Boltz2 → docking methodology as Cannamatrix's standard approach for novel enzyme discovery",
+      "Anchors the entire VSC track and seeds VSC-2/VSC-7"
+    ]
+  },
+  "PAN-2": {
+    title: "Pangenome GWAS at scale (541 accessions, 103 loci)",
+    background: "Cannabis GWAS has been limited to small panels and SNP-only genotyping that misses structural variation. Cannamatrix's 8-phase GEMMA MLM pipeline runs on 541 accessions across the 20-haplotype minigraph-cactus pangenome with KAGE2 graph-aware genotyping, capturing 103 chemotype-associated loci. Phase 7 LightGBM + SHAP integration and Phase 9 pangenome_annotation_lookup.tsv (~1.5M annotations) feed downstream pipelines.",
+    question: "Does graph-aware GWAS on a 541-accession pangenome panel recover known cannabinoid loci and reveal novel terpene/cannabinoid associations not visible to linear-reference GWAS?",
+    deliverables: [
+      "Published paper (doubles as GP-1 baseline)",
+      "Public-cohort scale demonstration of cannabis pangenome GWAS — first of its kind",
+      "priority_candidates_{trait}.tsv outputs feed GP-3 and the Feature Store",
+      "Anchor citation for the entire GP series"
+    ]
+  },
+  "PAN-3": {
+    title: "Secondary Metabolite Pangenome Atlas (HMMER + Boltz2, 67 families)",
+    background: "Cannabis secondary metabolism is partially characterized for cannabinoids and major terpenes but largely uncharted across the broader chemical space. Cannamatrix's HMMER scan across 67 enzyme families on 193 haplotypes generates a PAV/CNV matrix, network edges, and Boltz2-docked substrate predictions, all written to the Feature Store as parquet.",
+    question: "Can a HMMER + Boltz2 atlas across 67 enzyme families and 193 haplotypes systematically map cannabis secondary metabolism — including cannaflavins, sulfur compounds, and uncharacterized prenylation/methylation reactions?",
+    deliverables: [
+      "Published paper (P3, paired-release with PAN-2)",
+      "The Secondary Metabolite Pangenome Atlas as a citable industry reference",
+      "Substrate for CFL-1 (cannaflavin biosynthesis) and seeds VSC-4",
+      "Atlas data shipped to Feature Store for downstream ML"
+    ]
+  },
+  "PAN-4": {
+    title: "Cannabinoid Synthase Paralogs · structure, docking, sink burden",
+    background: "THCA/CBDA/CBCA synthases share structural folds but diverge in active-site geometry and substrate channeling. The Cannamatrix pangenome reveals paralog copy-number variation (CNV) creating \"sink burden\" — competition for shared CBGA substrate that depresses chemotype yields. Builds on PAN-2 GWAS hits and PAN-3 Boltz2 docking methodology.",
+    question: "Does structural divergence and CNV across cannabinoid synthase paralogs explain chemotype yield variance better than linear SNP-based models alone?",
+    deliverables: [
+      "Published paper",
+      "Drift-monitoring features for GP-3 (sink burden quantified via paralog dosage)",
+      "Patentable paralog-aware genotype interpretation method",
+      "Direct input to GP-Final BWM training"
+    ]
+  },
+  "PAN-5": {
+    title: "Pangenome-Guided Proteome Imputation from short reads · STRATEGIC HINGE",
+    background: "Cannamatrix's BYOS unit economics depend on low-coverage short-read sequencing (~$55/plant via Solis), but ML quality scales with proteomic-grade signal. The pangenome graph carries enough structural prior that imputed proteomes from short reads may approach long-read or RNA-seq quality for prediction purposes. Builds on PAN-3 enzyme inventories and EXP-2 expression ground truth.",
+    question: "Can pangenome-guided proteome imputation from short-read WGS recover proteomic-level features sufficient for chemotype prediction at a fraction of direct-proteomics cost?",
+    deliverables: [
+      "Published paper (the most defensible methodological IP in the entire roadmap)",
+      "The hinge that lets the entire commercial pipeline scale economically",
+      "Direct feature feed into GP-4 BWM training corpus",
+      "Patentable imputation method; potential platform licensing target"
+    ]
+  },
+  "PAN-6": {
+    title: "Pangenome Graph Feature Extraction",
+    background: "Linearizing pangenome graphs for ML loses topology — the very thing that distinguishes graph-native models. Graph node embeddings, path-based features, and bubble-aware encodings preserve structural variation context for downstream learners. Builds on PAN-2 graph infrastructure.",
+    question: "Do graph-native features (embeddings, bubble encodings, path traversals) outperform linear-VCF features for chemotype prediction across the BWM training pipeline?",
+    deliverables: [
+      "Published paper",
+      "Graph feature extraction library shipped into the Cannamatrix Feature Store",
+      "Foundational input to GP-4 and GP-Final",
+      "Establishes graph-native feature extraction as a Cannamatrix methodological contribution"
+    ]
+  },
+  "GP-1": {
+    title: "KAGE2 + GWAS prediction baseline",
+    background: "Genomic prediction in cannabis has historically used linear models on SNP arrays. KAGE2 graph-aware genotyping plus GWAS-informed feature selection on the Cannamatrix 8-phase pipeline establishes the prediction baseline. Identical to PAN-2 (single paper, dual citation).",
+    question: "Does KAGE2-based genotyping plus GWAS-informed feature selection establish a competitive prediction baseline for cannabis chemotype prediction?",
+    deliverables: [
+      "Same paper as PAN-2 (dual-track citation)",
+      "Production prediction baseline live in the GIR",
+      "Reference performance numbers for all downstream GP papers"
+    ]
+  },
+  "GP-2": {
+    title: "ctyper graph-aware genotyping · structurally complex regions",
+    background: "ctyper is purpose-built for structurally complex regions (paralogs, CNVs, large indels) where KAGE2 struggles. Cannabinoid synthase loci and trichome-trait QTLs are exactly the regions ctyper handles best. Builds on PAN-4 paralog characterization.",
+    question: "Does ctyper-based genotyping in structurally complex regions improve prediction over KAGE2 alone, particularly for synthase-burdened phenotypes?",
+    deliverables: [
+      "Published paper",
+      "Production deployment of dual-genotyper pipeline (KAGE2 standard + ctyper for hard regions)",
+      "Lift in GIR call quality on synthase / trichome QTL regions"
+    ]
+  },
+  "GP-3": {
+    title: "+ synthase structural features & sink burden · drift monitoring (F1/F2)",
+    background: "Predictions degrade when training distributions drift from production distributions. Cannamatrix's first F1/F2 cohort grows (CD-3) provide the first natural test of model stability across generations. Integrates PAN-4 sink burden and PAN-6 graph features.",
+    question: "Do synthase structural features + sink burden quantification improve prediction in F1/F2 over the GP-2 baseline, and how much chemotype drift accumulates per generation under MAS?",
+    deliverables: [
+      "Published paper",
+      "Drift monitoring as a productized GIR feature (changes flagged per generation)",
+      "Sink burden becomes a tunable breeder dial in CD-track decisions",
+      "Used directly by CD-3 MAS cohort selection"
+    ]
+  },
+  "GP-4": {
+    title: "Training data curation · multi-omics corpus for BWM training",
+    background: "Foundation models scale with curated data. The BWM capstone needs a unified multi-omics corpus: genomic (PAN-3, PAN-6), proteomic (PAN-5), transcriptomic (EXP-2/EXP-3), and methylomic (EPI-1). Curation methodology, quality scoring, and pretraining task design are themselves novel contributions.",
+    question: "Can a curated multi-omics corpus across the cannabis pangenome support self-supervised pretraining of a cannabis-specific bio world model?",
+    deliverables: [
+      "Published paper (curation methodology)",
+      "Trained model checkpoint candidate for GP-Final",
+      "Curation pipelines and data quality tooling productized in Feature Store",
+      "Public release of corpus metadata (weights remain private)"
+    ]
+  },
+  "GP-Final": {
+    title: "BWM-integrated cannabis world model · CAPSTONE",
+    background: "A bio world model (BWM) treats sequence, expression, structure, and phenotype as layers in a unified generative model. Cannamatrix's full data stack — pangenome, GWAS, expression, methylome, chemotype, clinical — provides the layered substrate. Builds on every paper in PAN, GP, EXP, and EPI tracks.",
+    question: "Can a multi-modal cannabis world model trained on the Cannamatrix corpus achieve prediction quality and breeding-design utility beyond ensemble baselines (Random Forest + Chemception)?",
+    deliverables: [
+      "Published paper (architecture + benchmarks; weights remain trade secret)",
+      "The capstone scientific deliverable of the decade",
+      "Decade-end product positioning Cannamatrix against any commodified DNA LM",
+      "Direct feed into all CD-track cultivar design from GP-Final onward"
+    ]
+  },
+  "GP-Sex": {
+    title: "X-linked dosage sex / hermie prediction · ships in GIR Sept 2026 · Patent #3",
+    background: "Cannabis sex determination is XY-like with X-linked dosage; hermaphroditism is environmentally and genetically mediated. Existing markers are panel-specific and break across pangenome haplotypes. Cannamatrix's graph-aware genotyping enables haplotype-resolved X-linked dosage estimation.",
+    question: "Does X-linked dosage estimation on the pangenome graph predict sex and hermie probability more reliably than current marker-panel approaches?",
+    deliverables: [
+      "Published paper",
+      "Patent #3 filing",
+      "Sex / hermie module in GIR Sept 2026 — direct Validation Rebate cohort feature",
+      "Largest near-term commercial feature drop on the entire roadmap"
+    ]
+  },
+  "GP-LM": {
+    title: "DNA foundation-model benchmarks (Evo, NT, AgroNT, BWM)",
+    background: "General-purpose DNA foundation models (Evo, Nucleotide Transformer, AgroNT) claim cross-species generalization but have been minimally tested on cannabis. The BWM is Cannamatrix's domain-specific competitor; this paper benchmarks them head-to-head.",
+    question: "Do generalist DNA LMs match the BWM on cannabis chemotype prediction tasks, or does domain-specific training meaningfully outperform?",
+    deliverables: [
+      "Published benchmarks paper",
+      "Public positioning of BWM vs. commodified DNA LMs",
+      "Strategic intelligence on whether to lean into generalist fine-tuning or hold the domain-specific course"
+    ]
+  },
+  "GP-GxE": {
+    title: "Multi-site GxE study · 24 genotypes × 6 sites · grant-gated",
+    background: "Genotype × environment interactions are large in cannabis (terpene volatility, cannabinoid ratio shifts) but rarely quantified at multi-site scale. USDA AFRI / NSF Plant Genome RFAs fit the design. Builds on PAN-2 GWAS infrastructure.",
+    question: "How much chemotype variance is explained by environment, and which loci drive significant GxE in cannabis?",
+    deliverables: [
+      "Published paper",
+      "Grant-funded research arm (USDA AFRI / NSF Plant Genome target)",
+      "GxE-aware features in the GP pipeline",
+      "Multi-site testing infrastructure for downstream cultivar evaluation"
+    ]
+  },
+  "EXP-2": {
+    title: "Pangenomic Panproteome Expression Atlas",
+    background: "Cannabis tissue-specific expression atlases exist but are reference-locked to a single accession. A pan-proteome atlas mapping expression onto haplotype-resolved pangenome coordinates anchors imputation models. Direct ground truth for PAN-5 imputation.",
+    question: "Can a haplotype-resolved expression atlas across cannabis tissues + chemotypes provide ground truth for pangenome-guided proteome imputation?",
+    deliverables: [
+      "Published paper (paired-release candidate with EPI-1)",
+      "Atlas data into Feature Store",
+      "Direct training labels for PAN-5 imputation",
+      "Citable expression-methylome cross-reference"
+    ]
+  },
+  "EXP-3": {
+    title: "Wet RNA-seq atlas with commercial grower partner",
+    background: "Lab-environment expression atlases miss commercial conditions (artificial lighting, stress states, harvest timing, post-harvest dynamics). A commercial grower partnership provides production-realistic expression data the field has never had at scale.",
+    question: "How does commercial-condition RNA-seq differ from research-condition expression, and which trait-relevant pathways shift under production?",
+    deliverables: [
+      "Published paper",
+      "Commercial-condition expression dataset in Feature Store",
+      "Reference for production-realistic chemotype prediction",
+      "Builds commercial partner relationship infrastructure"
+    ]
+  },
+  "SCI-1": {
+    title: "Signature Cultivar Index + PanSel Jaccard methodology",
+    background: "Cultivar uniqueness is currently asserted via name, lineage, or hand-picked SNP panels — none of which are reproducible standards. The SCI combines SNP uniqueness + chemotype uniqueness on the PanSel sweep-aware framework, producing a citable Jaccard-based metric. Pairs with the GIR collision probability framework (Formulas 10/11: visible vs. anchored entropy) and the VCF SHA-256 hash anchor.",
+    question: "Does the SCI provide a defensible, reproducible metric for distinguishing cultivars at IP, regulatory, and breeding-decision levels?",
+    deliverables: [
+      "Published paper",
+      "SCI as a citable industry standard (the GVR is the IP artifact; SCI is the derivative novelty / breeding-decision metric)",
+      "Direct support for Cannamatrix's IP-positioned commercial messaging",
+      "Foundation for any IP-protection or strain-registry partnership"
+    ]
+  },
+  "EPI-1": {
+    title: "Cannabis Methylome Atlas",
+    background: "DNA methylation drives cannabis sex stability, stress response, and likely chemotype consistency across generations. No published cannabis methylome atlas spans modern cultivar diversity at pangenome resolution. Cannamatrix's bisulfite-seq + pangenome alignment establishes the modality.",
+    question: "Does a pangenome-aligned methylome atlas reveal differentially methylated regions associated with stable chemotype expression and sex/hermie liability?",
+    deliverables: [
+      "Published paper (paired-release with EXP-2)",
+      "Methylome data into Feature Store",
+      "Direct input to GP-Final BWM",
+      "Establishes Cannamatrix in cannabis epigenetics — a novel modality for the field"
+    ]
+  },
+  "CD-1": {
+    title: "Ideal Cultivar Framework · chemotype targets per indication",
+    background: "Cultivars are typically described by THC/CBD ratio plus a few terpenes, not against indication-specific chemotype targets. Cannamatrix's expanded panel (cannabinoids + 45 terpenes + minors) supports indication-stratified target definition. Synthesizes early MC-track signals with literature.",
+    question: "Can chemotype targets be defined per therapeutic indication (pain, anxiety, sleep, anti-inflammation) and translated into breeder-actionable ideotypes?",
+    deliverables: [
+      "Published paper",
+      "The reference framework for the entire CD track",
+      "Citable definition of \"ideal cultivar\" per indication",
+      "Anchors GTM messaging on therapeutic-targeted breeding"
+    ]
+  },
+  "CD-2": {
+    title: "Reference Strain Catalog (96-cultivar set)",
+    background: "Cannamatrix's 96-cultivar reference set spans the chemotype space; a formal catalog with full chemotype + genotype profile is the citable reference the field has been missing. Each cultivar is genotyped on the pangenome with 18 cannabinoids + 45 terpenes characterized.",
+    question: "Does the 96-cultivar reference set adequately cover chemotype space for downstream ML and breeding decisions, and how is residual coverage gaps best filled?",
+    deliverables: [
+      "Published paper",
+      "Reference catalog as a citable industry asset",
+      "Validation cohort for prediction benchmarks",
+      "Underpins SCI scoring at production scale"
+    ]
+  },
+  "CD-3": {
+    title: "First MAS Cohort F1 results · uses GP-3 + D1 + D3",
+    background: "Marker-assisted selection (MAS) compresses breeding cycles by selecting at the seedling stage. Cannamatrix's first MAS cohort is the first prospective test of the GP stack on real F1 outcomes. Crosses leverage Green Luster Phenos (GLP) male library; royalty-bearing under partnership.",
+    question: "Does GP-3-driven MAS improve F1 chemotype hit rate over conventional phenotype-only selection?",
+    deliverables: [
+      "Published paper",
+      "First prospective validation of the prediction-to-cultivar loop",
+      "Enables MAS as a productized service",
+      "Foundation for CD-4 commercial release decisions"
+    ]
+  },
+  "CD-4": {
+    title: "F2/F3 stabilized cultivars + commercial releases",
+    background: "F1 hits don't fix until F2/F3 of selfing or sib-mating. Stable, commercializable cultivars require demonstrated phenotype consistency across generations. First releases under the GLP exclusive-distributor partnership.",
+    question: "Do MAS-selected F1 lines stabilize predictably through F2/F3 with chemotype variance below commercial thresholds?",
+    deliverables: [
+      "Published paper",
+      "First commercial cultivar releases (joint Cannamatrix × GLP)",
+      "Royalty-bearing IP under GLP partnership (10% on strain art / genetic IP)",
+      "Validates the MAS-to-market timeline"
+    ]
+  },
+  "CD-5": {
+    title: "Cohort II MAS strains · new chemotype targets · expanded indication panel",
+    background: "Cohort II expands beyond the initial chemotype targets to indication-specific designs informed by MC-2/MC-3 readouts. Iterates the CD-1 framework with empirical indication data.",
+    question: "Do indication-targeted chemotype designs (informed by MC-2/MC-3 outcomes) outperform generic high-cannabinoid lines on patient-relevant endpoints?",
+    deliverables: [
+      "Published paper",
+      "Second commercial cohort releases",
+      "Tighter indication alignment than Cohort I",
+      "Feeds CD-6 stabilization pipeline"
+    ]
+  },
+  "CD-6": {
+    title: "F4/F5 pure-line releases · phenotype consistency across 5 generations",
+    background: "True-breeding pure lines require F4/F5+ stabilization. No cannabis breeder has published genotype-anchored F4/F5 chemotype consistency data at scale. Pure lines anchor the premium tier of the commercial cultivar program.",
+    question: "How tightly do MAS-derived pure lines maintain chemotype across F4/F5, and what residual heterozygosity persists?",
+    deliverables: [
+      "Published paper",
+      "Pure-line cultivar releases (premium tier)",
+      "Establishes Cannamatrix as the source for genotype-validated stable cultivars",
+      "High-citation breeding-science contribution"
+    ]
+  },
+  "CD-7": {
+    title: "10-year cultivar performance retrospective · genetic drift, terpene stability, market fit",
+    background: "A decade of MAS-derived cultivar releases generates a unique retrospective dataset on genotype-anchored cultivar performance over time. No equivalent retrospective exists in cannabis literature.",
+    question: "How does cultivar performance evolve over a decade in commercial production — drift, terpene stability shifts, market-fit changes?",
+    deliverables: [
+      "Published paper",
+      "Decade-scale retrospective citable across breeding science",
+      "Strategic input to GP-Final BWM training",
+      "Defining market-evolution reference for cannabis breeding"
+    ]
+  },
+  "CD-8": {
+    title: "Therapeutic ideotype Cohort III · chronic-pain + sleep-targeted lines",
+    background: "Cohort III leverages 5+ years of MC-track patient outcomes data to design ideotypes against patient-reported outcomes rather than just chemotype targets. Tightest GP × MC integration in the roadmap.",
+    question: "Does a patient-outcome-driven ideotype design (vs. chemotype-target proxy) yield cultivars with measurably better clinical-track performance?",
+    deliverables: [
+      "Published paper",
+      "Therapeutic-grade cultivar releases",
+      "Direct input to potential FDA-track positioning",
+      "Highest-credentialed clinical cultivar releases of the roadmap"
+    ]
+  },
+  "MC-1": {
+    title: "Comparative effectiveness methodology + registry protocol",
+    background: "Cannabis clinical research is dominated by single-product trials, not comparative effectiveness. A registry-based comparative effectiveness protocol is the methodological foundation for the entire MC track — and is itself a publishable methodology contribution.",
+    question: "Can a registry-based comparative effectiveness design overcome the regulatory and operational barriers that have prevented head-to-head cannabis cultivar comparisons?",
+    deliverables: [
+      "Published methodology paper",
+      "IRB-ready registry protocol",
+      "Foundation for MC-2 through MC-8"
+    ]
+  },
+  "MC-2": {
+    title: "Chronic pain strain comparison (300–500 patients)",
+    background: "Chronic pain is the largest cannabis therapeutic indication but lacks rigorous head-to-head cultivar data. Cannamatrix-genotyped strains let comparisons happen at chemotype rather than name level, eliminating the most common confound in cannabis clinical research.",
+    question: "Do specific chemotypes (informed by CD-1) demonstrate measurably superior chronic pain outcomes over baseline cannabis?",
+    deliverables: [
+      "Published paper",
+      "First chemotype-anchored cannabis comparative effectiveness study",
+      "Direct input to CD-5 and CD-8 design",
+      "Defensible clinical evidence base for therapeutic positioning"
+    ]
+  },
+  "MC-3": {
+    title: "Anxiety + sleep strain comparison (~200 patients)",
+    background: "Anxiety and sleep are the second-largest cannabis indications. THC/CBD ratio is the only widely-discussed dial, but terpene profile likely matters more than current literature suggests.",
+    question: "Do terpene-driven chemotypes (linalool, myrcene, terpinolene) outperform cannabinoid-only stratification for anxiety and sleep outcomes?",
+    deliverables: [
+      "Published paper",
+      "Direct input to indication-targeted CD-5 / CD-8 designs",
+      "Most likely paper to surface terpene-driven entourage signal"
+    ]
+  },
+  "MC-4": {
+    title: "Patient-reported outcomes database paper",
+    background: "PRO collection is the registry's distinctive data product. A descriptive paper on the PRO dataset establishes data quality, demographics, and methodology for downstream analyses — and serves as a recruitment driver for MC-6/MC-7 cohorts.",
+    question: "What does the largest cannabis PRO database reveal about patient outcomes across the chemotype space?",
+    deliverables: [
+      "Published paper",
+      "Citable reference for the PRO dataset",
+      "Recruitment driver for MC-6 / MC-7 cohorts",
+      "Pharma-partnership-ready PRO infrastructure"
+    ]
+  },
+  "MC-5": {
+    title: "Pharmacokinetic profiles by chemotype · partner-gated",
+    background: "Cannabis PK is well-studied for THC/CBD but minimally for combined cannabinoid + terpene profiles delivered through real product. Partner-gated because it requires regulated PK lab capacity.",
+    question: "Do specific chemotype profiles produce measurably different PK signatures (Cmax, AUC, half-life) that explain variable effect onset and duration?",
+    deliverables: [
+      "Published paper",
+      "PK reference database",
+      "Direct input to GP-3 and GP-Final feature engineering",
+      "Clinical credentialing for therapeutic-track positioning"
+    ]
+  },
+  "MC-6": {
+    title: "5-year longitudinal patient outcomes",
+    background: "Long-term cannabis use outcomes are poorly characterized in registry literature. The MC-2 / MC-3 cohorts at 5-year follow-up generate the first prospective long-term cohort with genotype-anchored cultivar tracking.",
+    question: "How do patient outcomes evolve over 5 years of cannabis use, and what factors predict sustained vs. fading benefit?",
+    deliverables: [
+      "Published paper",
+      "Long-term safety + effectiveness reference",
+      "Direct input to MC-7 design",
+      "High-impact clinical citation"
+    ]
+  },
+  "MC-7": {
+    title: "Decade-scale cannabis safety + outcomes registry",
+    background: "A decade-scale registry with 5,000+ patients and genotype-anchored cultivar use is unique in cannabis literature. Maps therapeutic value, adverse events, and chronic-use patterns at scale and over time.",
+    question: "What is the long-term safety and effectiveness profile of cannabis across the chemotype space, and which patient subpopulations benefit most?",
+    deliverables: [
+      "Published paper (capstone clinical deliverable)",
+      "Defining citation for cannabis therapeutic effectiveness",
+      "Likely highest-impact clinical paper in the entire roadmap",
+      "Pharma / payer partnership leverage"
+    ]
+  },
+  "MC-8": {
+    title: "Pediatric & geriatric stratified outcomes",
+    background: "Cannabis use across age strata is poorly characterized at the chemotype level. Pediatric (epilepsy, cancer-adjuvant) and geriatric (pain, sleep, palliative) populations have distinct PK and risk profiles.",
+    question: "How do chemotype-effect relationships differ in pediatric and geriatric populations vs. the adult baseline?",
+    deliverables: [
+      "Published paper",
+      "Age-stratified clinical reference",
+      "Foundation for population-specific CD-track ideotypes",
+      "Pediatric track has potential FDA-pathway implications"
+    ]
+  },
+  "CFL-1": {
+    title: "Cannaflavin biosynthesis pathway · HMMER + Boltz2 on PAN-3 substrate",
+    background: "Cannaflavins (canflavin A, B, C) are flavonoid-prenyl compounds with documented anti-inflammatory activity but unclear biosynthetic origin. PAN-3 atlas covers prenyltransferases and methyltransferases relevant to cannaflavin biosynthesis; this paper applies Boltz2 docking to the candidate enzyme set.",
+    question: "Can the cannaflavin biosynthetic pathway be reconstructed from PAN-3 enzyme family hits + Boltz2 docking, and which prenyl/methyl transferase paralogs drive cannaflavin abundance variation?",
+    deliverables: [
+      "Published paper",
+      "First systematic mapping of cannaflavin biosynthesis",
+      "Direct input to CFL-2 GWAS",
+      "Cleanest biosynthesis-to-product story for new IP positioning"
+    ]
+  },
+  "CFL-2": {
+    title: "Cannaflavin GWAS · flavone-prenyl variation across PAN-2 cohort",
+    background: "PAN-2 cohort genotypes plus extended chemotype panel including cannaflavins enable the first cannaflavin GWAS at scale. Builds on CFL-1 candidate enzyme list and PAN-2 graph-aware GWAS pipeline.",
+    question: "Which loci control cannaflavin abundance, and how do those loci relate to canonical flavonoid pathway genes?",
+    deliverables: [
+      "Published paper",
+      "Cannaflavin breeding markers",
+      "Direct input to CFL-3 cultivar design"
+    ]
+  },
+  "CFL-3": {
+    title: "Cannaflavin-targeted cultivar design + first F1",
+    background: "Cannaflavins have not been a breeding target despite documented anti-inflammatory activity. CFL-2 markers + GP-3 stack enable the first cannaflavin-targeted MAS cycle.",
+    question: "Can MAS deliver F1 lines with measurably elevated cannaflavin content over commercial baseline?",
+    deliverables: [
+      "Published paper",
+      "First cannaflavin-elevated cultivar (premium-tier release candidate)",
+      "Patentable cultivar IP under GLP partnership",
+      "Anchors a novel commercial product category"
+    ]
+  },
+  "CFL-4": {
+    title: "Anti-inflammatory comparative effectiveness",
+    background: "Cannaflavin anti-inflammatory activity is documented in vitro but unproven in human comparative studies. CFL-3 cultivars enable the first chemotype-anchored anti-inflammatory comparative trial.",
+    question: "Do cannaflavin-elevated cultivars produce measurably better anti-inflammatory outcomes than baseline cannabis?",
+    deliverables: [
+      "Published paper",
+      "Clinical credentialing for cannaflavin-track therapeutic positioning",
+      "Defining clinical paper for the cannaflavin product line"
+    ]
+  },
+  "CFL-5": {
+    title: "Cannaflavin PK + SAR · partner-gated pharmacology",
+    background: "Cannaflavin pharmacology is minimally characterized. PK + structure-activity relationship (SAR) work requires regulated pharmacology infrastructure — partner-gated.",
+    question: "What are the PK profiles of canflavin A/B/C, and what SAR insights guide derivative or analog development?",
+    deliverables: [
+      "Published paper",
+      "PK reference for cannaflavins",
+      "Potential pharmaceutical-track derivative IP",
+      "Partnership credentialing for downstream pharma engagement"
+    ]
+  },
+  "CFL-6": {
+    title: "Cannaflavin clinical Phase II readout",
+    background: "A Phase II trial on cannaflavin-elevated product is the highest regulatory bar in the entire roadmap. Likely partner-funded.",
+    question: "Does cannaflavin-elevated cannabis deliver Phase II clinical efficacy in a defined inflammatory indication?",
+    deliverables: [
+      "Published paper",
+      "Phase II evidence base",
+      "Clearest path to genuine pharmaceutical-track value capture in the entire roadmap",
+      "Foundation for FDA Phase III conversation"
+    ]
+  },
+  "VSC-2": {
+    title: "VSC docking + substrate specificity",
+    background: "PAN-1 established structural plausibility for the cannabis alliinase via Boltz2. VSC-2 extends to docking + substrate specificity to identify which sulfur substrates the cannabis enzyme prefers — a step toward functional characterization without requiring wetlab.",
+    question: "What sulfur substrates does the cannabis alliinase preferentially bind, and how does substrate specificity differ from allium alliinases?",
+    deliverables: [
+      "Published paper",
+      "Substrate-specificity profile guides VSC-3 GWAS trait definition",
+      "Refines cannabis VSC mechanism story for IP positioning"
+    ]
+  },
+  "VSC-3": {
+    title: "Volatile Sulfur GWAS · alliinase + sulfur loci across PAN-2 cohort",
+    background: "PAN-2 cohort genotypes plus sulfur compound chemotypes enable the first volatile sulfur GWAS in cannabis. Builds on VSC-2 substrate predictions and PAN-2 graph-aware GWAS pipeline.",
+    question: "Which loci beyond the alliinase candidate drive volatile sulfur compound variation, and what is the genetic architecture of cannabis sulfur metabolism?",
+    deliverables: [
+      "Published paper",
+      "VSC-targeted breeding markers",
+      "Foundation for VSC-4 atlas and VSC-10 cultivar series"
+    ]
+  },
+  "VSC-4": {
+    title: "Cannabis sulfur metabolism atlas · full pathway · computational",
+    background: "VSC-3 genetics + PAN-3 enzyme family substrate maps enable a full computational reconstruction of cannabis sulfur metabolism. Companion to PAN-3 in scope and methodology.",
+    question: "What is the full architecture of cannabis sulfur metabolism, and which enzymatic steps are pangenome-variable?",
+    deliverables: [
+      "Published paper",
+      "Citable atlas of cannabis sulfur metabolism",
+      "Companion reference to PAN-3"
+    ]
+  },
+  "VSC-5": {
+    title: "Cross-species & cross-genus VSC genomics · alliums + brassicas + cannabis comparative",
+    background: "Alliums (garlic, onion), brassicas (kale, mustard), and cannabis all produce volatile sulfur compounds via distinct evolutionary routes. Cross-species comparative genomics positions cannabis VSC biology in evolutionary context — potentially a high-impact comparative biology paper.",
+    question: "Did cannabis evolve VSC capacity convergently with alliums/brassicas, or via lateral routes, and what does that imply about pathway optimization?",
+    deliverables: [
+      "Published paper",
+      "High-impact comparative biology contribution",
+      "Establishes Cannamatrix as the cannabis-side authority on cross-species sulfur metabolism"
+    ]
+  },
+  "VSC-6": {
+    title: "Sulfur metabolism trees v1 · 3-yr mapping effort across enzyme families",
+    background: "Phylogenetic mapping of sulfur-metabolism enzyme families across plants situates cannabis enzymes in the broader plant kingdom and identifies conserved vs. lineage-specific innovations. Methodologically templated to extend across other secondary metabolite trees later.",
+    question: "Where does cannabis sit on the sulfur-metabolism enzyme family trees, and which paralogs are cannabis-specific innovations?",
+    deliverables: [
+      "Published paper",
+      "Phylogenetic reference for sulfur-metabolism enzyme families",
+      "Methodological template for other secondary metabolism trees"
+    ]
+  },
+  "VSC-7": {
+    title: "Alliinase functional confirmation · via RNA-seq · pair with PAN-3",
+    background: "PAN-1 and VSC-2 establish structural plausibility but not in vivo functional confirmation. RNA-seq expression data from EXP-2 / EXP-3 confirms transcriptional activity in trichome tissue (the expected VSC site).",
+    question: "Is the proposed cannabis alliinase transcribed in trichome tissue at levels consistent with VSC biosynthesis?",
+    deliverables: [
+      "Published paper",
+      "First in vivo evidence of cannabis alliinase function",
+      "Closes the structural-prediction-to-biological-confirmation loop for the field"
+    ]
+  },
+  "VSC-8": {
+    title: "Alliinase heterologous expression · partner-gated",
+    background: "True functional confirmation requires heterologous expression and in vitro enzymatic assays. Partner-gated due to specialized molecular biology infrastructure.",
+    question: "Does the cannabis alliinase, when heterologously expressed, exhibit alliinase activity on cannabis-relevant substrates?",
+    deliverables: [
+      "Published paper",
+      "Definitive functional confirmation",
+      "Patentable enzyme + substrate IP",
+      "Foundation for derivative biotech applications"
+    ]
+  },
+  "VSC-9": {
+    title: "VSC clinical + microbiological properties",
+    background: "Volatile sulfur compounds in alliums are known antimicrobials and modulators of human microbiome. Cannabis VSCs may exhibit similar properties — potentially differentiated from allium VSCs by structural specifics.",
+    question: "Do cannabis VSCs demonstrate measurable clinical or microbiological activity (antimicrobial, microbiome-modulating)?",
+    deliverables: [
+      "Published paper",
+      "Foundation for VSC therapeutic positioning",
+      "Direct input to VSC-10 cultivar series design"
+    ]
+  },
+  "VSC-10": {
+    title: "VSC-driven cultivar series · sulfur-enriched aroma profile lines",
+    background: "VSC-3 markers + GP-3 stack enable VSC-targeted MAS. Sulfur-enriched aroma profiles (savory, allium-adjacent) are a novel commercial chemotype space.",
+    question: "Can MAS deliver cultivars with measurably elevated VSC content and consumer-discernible aroma profile shifts?",
+    deliverables: [
+      "Published paper",
+      "First VSC-elevated cultivar releases — premium / specialty positioning",
+      "Patentable cultivar IP under GLP partnership",
+      "Opens novel chemotype product category"
+    ]
+  },
+  "VSC-11": {
+    title: "VSC pharmacology + bioavailability · long-form metabolic & PK study",
+    background: "VSC pharmacology is essentially uncharacterized in cannabis. Long-form PK + metabolic studies are required for any therapeutic positioning.",
+    question: "What are the PK and metabolic fates of the major cannabis VSCs, and which are bioavailable in pharmacologically relevant concentrations?",
+    deliverables: [
+      "Published paper",
+      "PK reference for cannabis VSCs",
+      "Foundation for VSC-12 entourage clinical work"
+    ]
+  },
+  "VSC-12": {
+    title: "VSC entourage effects in clinical settings · pair with MC-7 longitudinal",
+    background: "Entourage effects — synergy among cannabinoids, terpenes, and other compounds — are widely cited but poorly quantified. VSC contribution to entourage is unstudied. Pairs with MC-7 to leverage decade-scale registry data.",
+    question: "Do VSCs measurably modulate cannabis clinical effects in patient outcomes data?",
+    deliverables: [
+      "Published paper",
+      "Defining paper on VSC's role in cannabis entourage",
+      "Likely highest-citation VSC paper in the roadmap"
+    ]
+  },
+};
+
+/* ──────────────── DATA ──────────────── */
+
+// 40 quarters: index 0 = Q2 2026, index 39 = Q1 2036 (10-yr horizon)
+const QUARTERS = (() => {
+  const out = [];
+  out.push({q:"Q2",y:26},{q:"Q3",y:26},{q:"Q4",y:26});
+  for (let y = 27; y <= 35; y++) out.push({q:"Q1",y},{q:"Q2",y},{q:"Q3",y},{q:"Q4",y});
+  out.push({q:"Q1",y:36});
+  return out;
+})();
+const TOTAL_Q = QUARTERS.length;
+
+// Helper — build segs from {start, end, status, label?}
+const seg = (start, end, status, label) => ({start, end, status, label: label ?? status.toUpperCase()});
+// Single-quarter convenience
+const s1 = (q, status, label) => seg(q, q, status, label);
+
+// Map internal status → display label (shown on bars)
+const LABELS = {
+  submit: "PUBLISH",
+  active: "ACTIVE",
+  prep: "PREP",
+  lab: "LAB",
+  write: "WRITE",
+  deploy: "DEPLOY",
+  validate: "VALIDATE",
+  gate: "GATE",
+  grant: "GRANT",
+  grow: "GROW",
+  pheno: "PHENO",
+  irb: "IRB",
+  enroll: "ENROLL",
+  live: "LIVE",
+  build: "BUILD",
+};
+
+const GROUPS = [
+  {
+    id: "pan", className: "grp-pan",
+    name: "Pangenomics Core",
+    tag: "PAN-1 → PAN-6 · Foundational",
+    tasks: [
+      { id: "PAN-1", name: "First Cannabis Alliinase · structural method pilot", segs: [s1(0, "submit")] },
+      { id: "PAN-2", name: "Pangenome GWAS at scale ", subname: "(541 accessions, 103 loci) — doubles as GP-1", segs: [s1(0, "submit")] },
+      { id: "PAN-3", name: "Secondary Metabolite Pangenome Atlas ", subname: "(HMMER + Boltz2, 67 families)", segs: [s1(0, "active"), s1(1, "write"), s1(2, "submit")] },
+      { id: "PAN-4", name: "Cannabinoid Synthase Paralogs · structure, docking, sink burden", segs: [seg(2, 3, "active"), seg(4, 4, "write"), s1(5, "submit")] },
+      { id: "PAN-5", name: "Pangenome-Guided Proteome Imputation ", subname: "from short reads — strategic hinge", segs: [seg(2, 3, "active"), seg(4, 4, "write"), s1(5, "submit")] },
+      { id: "PAN-6", name: "Pangenome Graph Feature Extraction", subname: "graph-native features feeding Genomic Prediction & Bio World Model", segs: [seg(5, 7, "active"), s1(8, "write"), s1(9, "submit")] },
+    ]
+  },
+  {
+    id: "gp", className: "grp-gp",
+    name: "GP Main Prediction Series",
+    tag: "Baseline → BWM Capstone",
+    tasks: [
+      { id: "GP-1", name: "KAGE2 + GWAS prediction baseline ", subname: "(= PAN-2)", segs: [s1(0, "submit")] },
+      { id: "GP-2", name: "ctyper graph-aware genotyping ", subname: "lift on structurally complex regions", segs: [s1(1, "active"), s1(1, "write"), s1(2, "submit")] },
+      { id: "GP-3", name: "+ synthase structural features & sink burden ", subname: "drift monitoring (F1/F2)", segs: [s1(1, "prep"), s1(2, "active"), s1(3, "submit")] },
+      { id: "GP-4", name: "Training data curation ", subname: "multi-omics corpus for BWM training", segs: [seg(3, 9, "prep"), seg(10, 16, "active"), s1(17, "write"), s1(18, "submit")] },
+      { id: "GP-Final", name: "BWM-integrated cannabis world model ", subname: "capstone · weights trade secret", segs: [seg(0, 6, "prep"), seg(7, 15, "active"), s1(16, "write"), s1(17, "submit")] },
+    ]
+  },
+  {
+    id: "spin", className: "grp-spin",
+    name: "GP Spinoffs · Sibling Papers",
+    tag: "Independent · do not feed GP-Final",
+    tasks: [
+      { id: "GP-Sex", name: "X-linked dosage sex / hermie prediction ", subname: "module ships in GIR Sept 2026 · Patent #3", segs: [s1(0, "prep"), s1(1, "active"), s1(2, "validate"), s1(3, "deploy"), s1(4, "write"), s1(5, "submit")] },
+      { id: "GP-LM", name: "DNA foundation-model benchmarks ", subname: "(Evo, NT, AgroNT, BWM)", segs: [s1(5, "gate"), s1(6, "prep"), s1(7, "active"), s1(8, "write"), s1(9, "submit")] },
+      { id: "GP-GxE", name: "Multi-site GxE study · 24 genotypes × 6 sites ", subname: "grant-gated · USDA AFRI / NSF Plant Genome", segs: [seg(2, 3, "grant"), seg(8, 10, "lab"), seg(11, 13, "active"), s1(14, "submit")] },
+    ]
+  },
+  {
+    id: "exp", className: "grp-exp",
+    name: "Expression Atlases",
+    tag: "EXP · gates on PAN-5",
+    tasks: [
+      { id: "EXP-2", name: "Pangenomic Panproteome Expression Atlas", segs: [s1(0, "prep"), s1(1, "active"), s1(2, "submit")] },
+      { id: "EXP-3", name: "Wet RNA-seq atlas with commercial grower partner", segs: [seg(8, 9, "lab"), seg(10, 11, "active"), s1(12, "write"), s1(12, "submit")] },
+    ]
+  },
+  {
+    id: "sci", className: "grp-sci",
+    name: "Signature Cultivar Index",
+    tag: "SCI · citable standards",
+    tasks: [
+      { id: "SCI-1", name: "Signature Cultivar Index + PanSel Jaccard methodology", segs: [s1(0, "prep"), s1(1, "write"), s1(2, "submit")] },
+    ]
+  },
+  {
+    id: "epi", className: "grp-epi",
+    name: "Epigenetics",
+    tag: "EPI · novel modality",
+    tasks: [
+      { id: "EPI-1", name: "Cannabis Methylome Atlas ", subname: "pair-release candidate with EXP-2", segs: [s1(7, "prep"), seg(8, 9, "lab"), s1(10, "write"), s1(10, "submit")] },
+    ]
+  },
+  {
+    id: "cd", className: "grp-cd",
+    name: "Ideal Cultivar Design Track",
+    tag: "Cultivar · biological time",
+    tasks: [
+      { id: "CD-1", name: "Ideal Cultivar Framework ", subname: "chemotype targets per indication", segs: [seg(1, 2, "prep"), seg(3, 4, "active"), s1(5, "submit")] },
+      { id: "CD-2", name: "Reference Strain Catalog ", subname: "(96-cultivar set)", segs: [seg(3, 4, "prep"), seg(5, 6, "active"), seg(7, 8, "write"), s1(9, "submit")] },
+      { id: "CD-3", name: "First MAS Cohort F1 results ", subname: "uses GP-3 + D1 + D3", segs: [seg(1, 6, "grow"), seg(7, 8, "pheno"), s1(11, "submit")] },
+      { id: "CD-4", name: "F2/F3 stabilized cultivars + commercial releases", segs: [seg(7, 8, "prep"), seg(9, 14, "grow"), seg(15, 17, "pheno"), s1(19, "submit")] },
+      { id: "CD-5", name: "Cohort II MAS strains ", subname: "new chemotype targets · expanded indication panel", segs: [seg(15, 16, "prep"), seg(17, 22, "grow"), seg(23, 24, "pheno"), s1(25, "submit")] },
+      { id: "CD-6", name: "F4/F5 pure-line releases ", subname: "phenotype consistency across 5 generations", segs: [seg(20, 22, "prep"), seg(23, 28, "grow"), seg(29, 30, "pheno"), s1(31, "submit")] },
+      { id: "CD-7", name: "10-year cultivar performance retrospective ", subname: "genetic drift, terpene stability, market fit", segs: [seg(28, 32, "active"), seg(33, 34, "write"), s1(35, "submit")] },
+      { id: "CD-8", name: "Therapeutic ideotype Cohort III ", subname: "chronic-pain + sleep-targeted lines", segs: [seg(31, 33, "prep"), seg(34, 38, "grow"), s1(39, "submit")] },
+    ]
+  },
+  {
+    id: "mc", className: "grp-mc",
+    name: "Medical Comparative Track",
+    tag: "MC · regulatory time",
+    tasks: [
+      { id: "MC-1", name: "Comparative effectiveness methodology + registry protocol", segs: [seg(3, 4, "prep"), seg(5, 6, "write"), s1(7, "submit")] },
+      { id: "REG", name: "Registry infrastructure ", subname: "build → IRB → live", segs: [seg(3, 4, "build"), seg(5, 6, "irb"), seg(7, 39, "live")] },
+      { id: "MC-2", name: "Chronic pain strain comparison ", subname: "(300–500 patients)", segs: [seg(5, 6, "prep"), seg(7, 8, "irb"), seg(9, 12, "enroll"), s1(13, "submit")] },
+      { id: "MC-3", name: "Anxiety + sleep strain comparison ", subname: "(~200 patients)", segs: [seg(7, 8, "prep"), seg(9, 10, "irb"), seg(11, 14, "enroll"), s1(15, "submit")] },
+      { id: "MC-4", name: "Patient-reported outcomes database paper", segs: [seg(11, 12, "active"), seg(13, 14, "write"), s1(15, "submit")] },
+      { id: "MC-5", name: "Pharmacokinetic profiles by chemotype ", subname: "partner-gated · external pharm", segs: [seg(7, 8, "prep"), seg(9, 12, "active"), seg(13, 14, "write"), s1(15, "submit")] },
+      { id: "MC-6", name: "5-year longitudinal patient outcomes ", subname: "cohort follow-up of MC-2 / MC-3", segs: [seg(15, 16, "prep"), seg(17, 26, "enroll"), seg(27, 28, "write"), s1(29, "submit")] },
+      { id: "MC-7", name: "Decade-scale cannabis safety + outcomes registry", segs: [seg(20, 22, "prep"), seg(23, 34, "enroll"), seg(35, 36, "write"), s1(37, "submit")] },
+      { id: "MC-8", name: "Pediatric & geriatric stratified outcomes ", subname: "age-cohort comparative", segs: [seg(22, 24, "prep"), seg(25, 30, "enroll"), seg(31, 32, "write"), s1(33, "submit")] },
+    ]
+  },
+  {
+    id: "cfl", className: "grp-cfl",
+    name: "Cannaflavins · Cross-Track",
+    tag: "CFL · cleanest white space",
+    tasks: [
+      { id: "CFL-1", name: "Biosynthesis pathway ", subname: "HMMER + Boltz2 on PAN-3 substrate", segs: [seg(0, 1, "active"), s1(2, "submit")] },
+      { id: "CFL-2", name: "Cannaflavin GWAS ", subname: "flavone-prenyl variation across PAN-2 cohort", segs: [seg(3, 6, "prep"), seg(7, 9, "active"), s1(10, "write"), s1(11, "submit")] },
+      { id: "CFL-3", name: "Cannaflavin-targeted cultivar design + first F1", segs: [seg(10, 11, "active"), s1(12, "submit")] },
+      { id: "CFL-4", name: "Anti-inflammatory comparative effectiveness", segs: [seg(15, 18, "active"), s1(19, "submit")] },
+      { id: "CFL-5", name: "Cannaflavin PK + SAR ", subname: "partner-gated pharmacology", segs: [seg(20, 22, "active"), seg(23, 24, "write"), s1(25, "submit")] },
+      { id: "CFL-6", name: "Cannaflavin clinical Phase II readout", segs: [seg(26, 30, "enroll"), seg(31, 32, "write"), s1(33, "submit")] },
+    ]
+  },
+  {
+    id: "vsc", className: "grp-vsc",
+    name: "Volatile Sulfur · Cross-Track",
+    tag: "VSC · software first, wetlab second",
+    tasks: [
+      { id: "VSC-2", name: "VSC docking + substrate specificity", segs: [s1(3, "active"), s1(4, "write"), s1(5, "submit")] },
+      { id: "VSC-3", name: "Volatile Sulfur GWAS ", subname: "alliinase + sulfur loci across PAN-2 cohort", segs: [seg(3, 6, "prep"), seg(7, 9, "active"), s1(10, "write"), s1(11, "submit")] },
+      { id: "VSC-4", name: "Cannabis sulfur metabolism atlas ", subname: "full pathway · computational", segs: [seg(8, 9, "active"), s1(10, "submit")] },
+      { id: "VSC-5", name: "Cross-species & cross-genus VSC genomics ", subname: "alliums + brassicas + cannabis comparative", segs: [seg(11, 22, "active"), seg(23, 24, "write"), s1(25, "submit")] },
+      { id: "VSC-6", name: "Sulfur metabolism trees v1 ", subname: "3-yr mapping effort across enzyme families", segs: [seg(8, 17, "active"), seg(18, 19, "write"), s1(20, "submit")] },
+
+      // —— Expression / wetlab / clinical ——
+      { id: "VSC-7", name: "Alliinase functional confirmation ", subname: "via RNA-seq · pair with PAN-3", segs: [s1(5, "lab"), s1(6, "submit")] },
+      { id: "VSC-8", name: "Alliinase heterologous expression ", subname: "partner-gated", segs: [seg(8, 10, "lab"), s1(11, "submit")] },
+      { id: "VSC-9", name: "VSC clinical + microbiological properties", segs: [seg(15, 17, "active"), s1(18, "submit")] },
+      { id: "VSC-10", name: "VSC-driven cultivar series ", subname: "sulfur-enriched aroma profile lines", segs: [seg(23, 24, "prep"), seg(25, 28, "grow"), seg(29, 30, "pheno"), s1(31, "submit")] },
+      { id: "VSC-11", name: "VSC pharmacology + bioavailability ", subname: "long-form metabolic & PK study", segs: [seg(27, 30, "active"), seg(31, 32, "write"), s1(33, "submit")] },
+      { id: "VSC-12", name: "VSC entourage effects in clinical settings ", subname: "pair with MC-7 longitudinal", segs: [seg(31, 35, "enroll"), seg(36, 37, "write"), s1(38, "submit")] },
+    ]
+  },
+];
+
+/* ──────────────── RENDER ──────────────── */
+
+const gantt = document.getElementById("gantt");
+
+// Header — years
+const yearsRow = document.createElement("div");
+yearsRow.className = "timeline-years";
+const labelHead = document.createElement("div");
+labelHead.className = "label-cell";
+labelHead.textContent = "Thread / Paper";
+yearsRow.appendChild(labelHead);
+
+const yearGroups = {};
+QUARTERS.forEach((q, i) => {
+  yearGroups[q.y] = (yearGroups[q.y] || 0) + 1;
+});
+let yearsAdded = new Set();
+let colCursor = 2; // col 1 = label cell
+QUARTERS.forEach((q, i) => {
+  if (!yearsAdded.has(q.y)) {
+    const cell = document.createElement("div");
+    cell.className = "yr" + (i === 0 ? " first" : "");
+    const span = yearGroups[q.y];
+    cell.style.gridColumn = `${colCursor} / span ${span}`;
+    cell.textContent = `20${q.y}`;
+    yearsRow.appendChild(cell);
+    yearsAdded.add(q.y);
+    colCursor += span;
+  }
+});
+
+// Header — quarters
+const qRow = document.createElement("div");
+qRow.className = "timeline-quarters";
+const labelHead2 = document.createElement("div");
+labelHead2.className = "label-cell";
+labelHead2.textContent = "";
+qRow.appendChild(labelHead2);
+QUARTERS.forEach((q, i) => {
+  const cell = document.createElement("div");
+  cell.className = "q" + (q.q === "Q1" || i === 0 ? " first-of-year" : "");
+  cell.textContent = q.q;
+  qRow.appendChild(cell);
+});
+
+const head = document.createElement("div");
+head.className = "timeline-head";
+head.appendChild(yearsRow);
+head.appendChild(qRow);
+gantt.appendChild(head);
+
+// Today marker — May 7, 2026 → start of Q2 2026 (col 0), at ~37/91 days through Q2
+// Q2 = April-June. May 7 is ~37 days into Q2. 37/91 = 0.41
+const TODAY_OFFSET_QUARTERS = 0 + (37/91);
+
+GROUPS.forEach((grp, gi) => {
+  // Group header row
+  const ghead = document.createElement("div");
+  ghead.className = `group ${grp.className}`;
+  ghead.id = `thread-${grp.id}`;
+  ghead.innerHTML = `
+    <div class="group-label">
+      <div class="group-bar"></div>
+      <div class="group-name">${grp.name}</div>
+    </div>
+    <div class="group-rail"></div>
+  `;
+  // Add tag to group label
+  const tagEl = document.createElement("span");
+  tagEl.className = "group-tag";
+  tagEl.textContent = grp.tag;
+  ghead.querySelector(".group-label").appendChild(tagEl);
+  gantt.appendChild(ghead);
+
+  // Task rows
+  grp.tasks.forEach((task, ti) => {
+    const row = document.createElement("div");
+    row.className = `row ${grp.className}`;
+    row.style.background = "transparent"; // override gradient bg from class on row level
+
+    if (SYNOPSES[task.id]) {
+      row.classList.add("has-synopsis");
+      row.setAttribute("tabindex", "0");
+      row.setAttribute("role", "button");
+      row.setAttribute("aria-label", `Open synopsis for ${task.id}`);
+      row.dataset.paperId = task.id;
+      row.addEventListener("click", () => openSynopsis(task.id, row));
+      row.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          openSynopsis(task.id, row);
+        }
+      });
+    }
+
+    const label = document.createElement("div");
+    label.className = "row-label";
+    label.innerHTML = `
+      <span class="row-id">${task.id}</span>
+      <span class="row-name">${task.name}${task.subname ? `<span class="muted">${task.subname}</span>` : ""}</span>
+    `;
+    row.appendChild(label);
+
+    const track = document.createElement("div");
+    track.className = "row-track";
+
+    // Bars
+    task.segs.forEach(s => {
+      const bar = document.createElement("div");
+      bar.className = `bar ${s.status}`;
+      const left = (s.start / TOTAL_Q) * 100;
+      const width = ((s.end - s.start + 1) / TOTAL_Q) * 100;
+      bar.style.left = `calc(${left}%)`;
+      bar.style.width = `calc(${width}% - 4px)`;
+      bar.style.marginLeft = "2px";
+      const display = LABELS[s.status] || s.label;
+      const span = s.end - s.start + 1;
+      if (s.status === "submit") {
+        bar.textContent = span === 1 ? "★ PUB" : "★ PUBLISH";
+      } else {
+        bar.textContent = span === 1 ? display.slice(0, 6) : display;
+      }
+      bar.title = `${task.id} · ${display} · ${QUARTERS[s.start].q} 20${QUARTERS[s.start].y}${s.end !== s.start ? ` → ${QUARTERS[s.end].q} 20${QUARTERS[s.end].y}` : ""}`;
+      track.appendChild(bar);
+    });
+
+    // Today marker only on the first task row of first group
+    if (gi === 0 && ti === 0) {
+      const today = document.createElement("div");
+      today.className = "today";
+      today.style.left = `calc(${(TODAY_OFFSET_QUARTERS / TOTAL_Q) * 100}%)`;
+      const flag = document.createElement("div");
+      flag.className = "today-flag";
+      flag.textContent = "Today · May 7, 2026";
+      today.appendChild(flag);
+      track.appendChild(today);
+    }
+
+    row.appendChild(track);
+    gantt.appendChild(row);
+  });
+});
+
+// Add a continuous vertical "today" line spanning full gantt height
+// (positioned absolutely from a wrapper)
+const todayFull = document.createElement("div");
+todayFull.style.position = "absolute";
+todayFull.style.top = "0";
+todayFull.style.bottom = "0";
+todayFull.style.left = `calc(var(--col-label) + (${TODAY_OFFSET_QUARTERS} * var(--col-q)))`;
+todayFull.style.borderLeft = "2px dashed rgba(1,177,131,0.55)";
+todayFull.style.pointerEvents = "none";
+todayFull.style.zIndex = "0";
+gantt.style.position = "relative";
+gantt.appendChild(todayFull);
+
+// ─────────── JUMP TO PRESENT BUTTON ───────────
+const jumpBtn = document.createElement("button");
+jumpBtn.className = "jump-today";
+jumpBtn.innerHTML = '<span class="jt-arrow">←</span><span class="jt-label">Jump to today</span>';
+document.body.appendChild(jumpBtn);
+
+function todayDocX() {
+  const cs = getComputedStyle(document.documentElement);
+  const colLabel = parseFloat(cs.getPropertyValue('--col-label')) || 320;
+  const colQ = parseFloat(cs.getPropertyValue('--col-q')) || 56;
+  return colLabel + (TODAY_OFFSET_QUARTERS * colQ);
+}
+const _wrap = document.querySelector('.gantt-wrap');
+function updateJumpBtn() {
+  const tx = todayDocX();
+  const vL = _wrap.scrollLeft, vR = _wrap.scrollLeft + _wrap.clientWidth;
+  const off = tx < vL + 80 || tx > vR - 80;
+  jumpBtn.classList.toggle("show", off);
+  jumpBtn.querySelector(".jt-arrow").textContent = tx < vL ? "←" : (tx > vR ? "→" : "←");
+}
+jumpBtn.addEventListener("click", () => {
+  _wrap.scrollTo({ left: Math.max(0, todayDocX() - _wrap.clientWidth * 0.28), behavior: "smooth" });
+});
+_wrap.addEventListener("scroll", updateJumpBtn, { passive: true });
+window.addEventListener("resize", updateJumpBtn);
+requestAnimationFrame(updateJumpBtn);
+
+// ─────────── Sticky timeline-head on vertical page scroll ───────────
+const _head = document.querySelector('.timeline-head');
+const _gantt = document.getElementById('gantt');
+if (_head) {
+  _head.style.willChange = 'transform';
+  _head.style.boxShadow = '0 6px 16px -10px rgba(0,0,0,0.18)';
+}
+function syncStickyHead() {
+  if (!_head || !_gantt) return;
+  const lg = document.querySelector('.legend');
+  const legendBottom = lg ? lg.getBoundingClientRect().bottom : 0;
+  const wrapTop = _wrap.getBoundingClientRect().top;
+  const ganttRect = _gantt.getBoundingClientRect();
+  const headH = _head.offsetHeight;
+  // distance from natural top to legend's bottom
+  let offset = legendBottom - wrapTop;
+  if (offset < 0) offset = 0;
+  // don't push head past the bottom of gantt
+  const maxOffset = Math.max(0, ganttRect.height - headH);
+  if (offset > maxOffset) offset = maxOffset;
+  _head.style.transform = `translateY(${offset}px)`;
+}
+window.addEventListener('scroll', syncStickyHead, { passive: true });
+window.addEventListener('resize', syncStickyHead);
+requestAnimationFrame(syncStickyHead);
+
+// ─────────── (hero/legend use CSS position:sticky — no JS needed) ───────────
+
+// keep timeline-head offset in sync with sticky legend height
+const _syncLegendH = () => {
+  const lg = document.querySelector('.legend');
+  if (lg) document.documentElement.style.setProperty('--legend-h', lg.offsetHeight + 'px');
+};
+_syncLegendH();
+window.addEventListener('resize', _syncLegendH);
+
+/* ──────────────── SYNOPSIS MODAL ──────────────── */
+
+// paperId → { groupId, groupName, navList (filtered to ids with synopses) }
+const PAPER_LOOKUP = (() => {
+  const out = {};
+  GROUPS.forEach(grp => {
+    const navList = grp.tasks.map(t => t.id).filter(id => SYNOPSES[id]);
+    grp.tasks.forEach(t => {
+      out[t.id] = { groupId: grp.id, groupName: grp.name, navList };
+    });
+  });
+  return out;
+})();
+
+// Warn (don't throw) on missing synopses, ignoring REG (infrastructure)
+GROUPS.forEach(grp => {
+  grp.tasks.forEach(t => {
+    if (t.id !== "REG" && !SYNOPSES[t.id]) {
+      console.warn(`SYNOPSES missing entry for paper ${t.id}`);
+    }
+  });
+});
+
+const _modal = document.createElement("div");
+_modal.className = "synopsis-modal";
+_modal.setAttribute("role", "dialog");
+_modal.setAttribute("aria-modal", "true");
+_modal.setAttribute("aria-hidden", "true");
+_modal.innerHTML = `
+  <div class="synopsis-card" role="document">
+    <button class="synopsis-close" type="button" aria-label="Close synopsis">×</button>
+    <div class="synopsis-header">
+      <span class="synopsis-track-tag"></span>
+      <div><span class="synopsis-id"></span></div>
+      <h2 class="synopsis-title"></h2>
+    </div>
+    <div class="synopsis-body">
+      <section class="synopsis-section bg-section">
+        <div class="synopsis-label">Background</div>
+        <p></p>
+      </section>
+      <section class="synopsis-section q-section">
+        <div class="synopsis-label">Hypothesis · Research Question</div>
+        <p></p>
+      </section>
+      <section class="synopsis-section deliv-section">
+        <div class="synopsis-label">Expected Deliverable</div>
+        <ul class="synopsis-deliverables"></ul>
+      </section>
+    </div>
+    <div class="synopsis-footer">
+      <button class="synopsis-nav synopsis-nav-prev" type="button">←</button>
+      <button class="synopsis-nav synopsis-nav-next" type="button">→</button>
+    </div>
+  </div>
+`;
+document.body.appendChild(_modal);
+
+const _modalClose = _modal.querySelector(".synopsis-close");
+const _modalTrackTag = _modal.querySelector(".synopsis-track-tag");
+const _modalIdEl = _modal.querySelector(".synopsis-id");
+const _modalTitle = _modal.querySelector(".synopsis-title");
+const _modalBg = _modal.querySelector(".bg-section p");
+const _modalQ = _modal.querySelector(".q-section p");
+const _modalDeliv = _modal.querySelector(".synopsis-deliverables");
+const _modalPrev = _modal.querySelector(".synopsis-nav-prev");
+const _modalNext = _modal.querySelector(".synopsis-nav-next");
+const _modalBody = _modal.querySelector(".synopsis-body");
+
+let _currentPaperId = null;
+let _returnFocusEl = null;
+
+function openSynopsis(paperId, returnEl) {
+  const data = SYNOPSES[paperId];
+  if (!data) return;
+  const lookup = PAPER_LOOKUP[paperId];
+  const trackKey = lookup ? lookup.groupId : "pan";
+  const trackName = lookup ? lookup.groupName : (TRACK_NAMES[trackKey] || "");
+
+  _currentPaperId = paperId;
+  if (returnEl) _returnFocusEl = returnEl;
+
+  _modalTrackTag.className = `synopsis-track-tag tt-${trackKey}`;
+  _modalTrackTag.textContent = trackName;
+  _modalIdEl.textContent = paperId;
+  _modalTitle.textContent = data.title;
+  _modalBg.textContent = data.background;
+  _modalQ.textContent = data.question;
+  _modalDeliv.innerHTML = "";
+  data.deliverables.forEach(d => {
+    const li = document.createElement("li");
+    li.textContent = d;
+    _modalDeliv.appendChild(li);
+  });
+
+  updateModalNav();
+
+  _modal.classList.add("open");
+  _modal.setAttribute("aria-hidden", "false");
+  document.body.classList.add("modal-open");
+  _modalBody.scrollTop = 0;
+
+  setTimeout(() => _modalClose.focus(), 30);
+}
+
+function closeSynopsis() {
+  if (!_modal.classList.contains("open")) return;
+  _modal.classList.remove("open");
+  _modal.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("modal-open");
+  if (_returnFocusEl && document.contains(_returnFocusEl)) {
+    _returnFocusEl.focus();
+  }
+  _currentPaperId = null;
+}
+
+function updateModalNav() {
+  const lookup = PAPER_LOOKUP[_currentPaperId];
+  if (!lookup) {
+    _modalPrev.disabled = true;
+    _modalNext.disabled = true;
+    _modalPrev.textContent = "←";
+    _modalNext.textContent = "→";
+    return;
+  }
+  const list = lookup.navList;
+  const idx = list.indexOf(_currentPaperId);
+  const prevId = idx > 0 ? list[idx - 1] : null;
+  const nextId = idx >= 0 && idx < list.length - 1 ? list[idx + 1] : null;
+
+  if (prevId) {
+    _modalPrev.disabled = false;
+    _modalPrev.textContent = `← ${prevId}`;
+  } else {
+    _modalPrev.disabled = true;
+    _modalPrev.textContent = "←";
+  }
+  if (nextId) {
+    _modalNext.disabled = false;
+    _modalNext.textContent = `${nextId} →`;
+  } else {
+    _modalNext.disabled = true;
+    _modalNext.textContent = "→";
+  }
+}
+
+function navSynopsis(direction) {
+  const lookup = PAPER_LOOKUP[_currentPaperId];
+  if (!lookup) return;
+  const list = lookup.navList;
+  const idx = list.indexOf(_currentPaperId);
+  const target = direction === "prev"
+    ? (idx > 0 ? list[idx - 1] : null)
+    : (idx >= 0 && idx < list.length - 1 ? list[idx + 1] : null);
+  if (!target) return;
+  const row = document.querySelector(`.row[data-paper-id="${target}"]`);
+  openSynopsis(target, row || _returnFocusEl);
+}
+
+_modalClose.addEventListener("click", closeSynopsis);
+_modal.addEventListener("click", (e) => {
+  if (e.target === _modal) closeSynopsis();
+});
+_modalPrev.addEventListener("click", () => navSynopsis("prev"));
+_modalNext.addEventListener("click", () => navSynopsis("next"));
+
+document.addEventListener("keydown", (e) => {
+  if (!_modal.classList.contains("open")) return;
+  if (e.key === "Escape") {
+    e.preventDefault();
+    closeSynopsis();
+  } else if (e.key === "ArrowLeft") {
+    e.preventDefault();
+    navSynopsis("prev");
+  } else if (e.key === "ArrowRight") {
+    e.preventDefault();
+    navSynopsis("next");
+  } else if (e.key === "Tab") {
+    const focusables = [_modalClose, _modalPrev, _modalNext].filter(el => !el.disabled);
+    if (!focusables.length) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  }
+});
+</script>
+
+</body>
+</html>
