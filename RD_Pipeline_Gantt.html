@@ -1142,7 +1142,7 @@ const SYNOPSES = {
   "PAN-1": {
     title: "First Cannabis Alliinase · structural method pilot",
     background: "Alliinases catalyze volatile sulfur compound (VSC) formation in alliums but their existence in cannabis was only recently inferred. Cannamatrix's bioRxiv submission (Apr 28, 2026) proposed the first cannabis alliinase candidate via HMMER scan against the EH23a-anchored 20-haplotype Salk pangenome, followed by Boltz2 structural prediction and active-site comparison to allium references.",
-    question: "Does the proposed cannabis alliinase candidate show structural and active-site conservation with allium alliinases sufficient to support VSC biosynthesis?",
+    question: "Does the proposed cannabis alliinase candidate show structural and active-site conservation with allium alliinases sufficient to support VSC biosynthesis, and is its activity profile actionable for boosting VSC yield and crop productivity via breeding selection or enzyme engineering?",
     deliverables: [
       "Published paper (P1, bioRxiv Apr 28, 2026; journal version follow-on)",
       "Establishes the HMMER → Boltz2 → docking methodology as Cannamatrix's standard approach for novel enzyme discovery",
@@ -1152,7 +1152,7 @@ const SYNOPSES = {
   "PAN-2": {
     title: "Pangenome GWAS at scale (541 accessions, 103 loci)",
     background: "Cannabis GWAS has been limited to small panels and SNP-only genotyping that misses structural variation. Cannamatrix's 8-phase GEMMA MLM pipeline runs on 541 accessions across the 20-haplotype minigraph-cactus pangenome with KAGE2 graph-aware genotyping, capturing 103 chemotype-associated loci. Phase 7 LightGBM + SHAP integration and Phase 9 pangenome_annotation_lookup.tsv (~1.5M annotations) feed downstream pipelines.",
-    question: "Does graph-aware GWAS on a 541-accession pangenome panel recover known cannabinoid loci and reveal novel terpene/cannabinoid associations not visible to linear-reference GWAS?",
+    question: "Does graph-aware GWAS on a 541-accession pangenome panel recover loci that drive cannabinoid and terpene yield and crop productivity (yield, composition stability, precursor flux, plant vigor), providing markers for selection toward higher secondary metabolite output?",
     deliverables: [
       "Published paper (doubles as GP-1 baseline)",
       "Public-cohort scale demonstration of cannabis pangenome GWAS — first of its kind",
@@ -1163,7 +1163,7 @@ const SYNOPSES = {
   "PAN-3": {
     title: "Secondary Metabolite Pangenome Atlas (HMMER + Boltz2, 67 families)",
     background: "Cannabis secondary metabolism is partially characterized for cannabinoids and major terpenes but largely uncharted across the broader chemical space. Cannamatrix's HMMER scan across 67 enzyme families on 193 haplotypes generates a PAV/CNV matrix, network edges, and Boltz2-docked substrate predictions, all written to the Feature Store as parquet.",
-    question: "Can a HMMER + Boltz2 atlas across 67 enzyme families and 193 haplotypes systematically map cannabis secondary metabolism — including cannaflavins, sulfur compounds, and uncharacterized prenylation/methylation reactions?",
+    question: "Can a HMMER + Boltz2 atlas across 67 enzyme families and 193 haplotypes identify which enzymes (and which paralog copies) limit or boost yield and crop productivity for cannabinoids, terpenes, cannaflavins, sulfur compounds, and other secondary metabolites of interest, providing breeding and engineering targets?",
     deliverables: [
       "Published paper (P3, paired-release with PAN-2)",
       "The Secondary Metabolite Pangenome Atlas as a citable industry reference",
@@ -1172,12 +1172,13 @@ const SYNOPSES = {
     ]
   },
   "PAN-4": {
-    title: "Cannabinoid Synthase Paralogs · structure, docking, sink burden",
-    background: "THCA/CBDA/CBCA synthases share structural folds but diverge in active-site geometry and substrate channeling. The Cannamatrix pangenome reveals paralog copy-number variation (CNV) creating \"sink burden\" — competition for shared CBGA substrate that depresses chemotype yields. Builds on PAN-2 GWAS hits and PAN-3 Boltz2 docking methodology.",
-    question: "Does structural divergence and CNV across cannabinoid synthase paralogs explain chemotype yield variance better than linear SNP-based models alone?",
+    title: "Cannabinoid Synthase Paralogs · functional classification for yield",
+    background: "THCA/CBDA/CBCA synthases share structural folds but diverge in active-site geometry and substrate channeling, and the Cannamatrix pangenome reveals paralog copy-number variation (CNV) across cultivars. Paralogs split into four functional roles: (1) highly productive, chemotype-defining copies; (2) ancestral, promiscuous copies with low specificity; (3) low-productivity counterparts; (4) sink-acting copies that compete for shared CBGA substrate without yielding finished cannabinoid. Builds on PAN-2 GWAS hits and PAN-3 Boltz2 docking.",
+    question: "Can cannabinoid synthase paralogs be classified into productive, ancestral, low-productivity, and sink-acting roles, so breeding selection can favor high-yield copies and select against substrate-sink copies to boost finished cannabinoid yield?",
     deliverables: [
-      "Published paper",
-      "Drift-monitoring features for GP-3 (sink burden quantified via paralog dosage)",
+      "Functional classification of cannabinoid synthase paralogs (productive, ancestral/promiscuous, low-productivity, sink)",
+      "Selection criteria for breeders: enrich productive copies, deplete sink-acting copies",
+      "Drift-monitoring features for GP-3 (paralog dosage tracked across generations)",
       "Patentable paralog-aware genotype interpretation method",
       "Direct input to GP-Final BWM training"
     ]
@@ -1185,7 +1186,7 @@ const SYNOPSES = {
   "PAN-5": {
     title: "Pangenome-Guided Proteome Imputation from short reads · STRATEGIC HINGE",
     background: "Cannamatrix's BYOS unit economics depend on low-coverage short-read sequencing (~$55/plant via Solis), but ML quality scales with proteomic-grade signal. The pangenome graph carries enough structural prior that imputed proteomes from short reads may approach long-read or RNA-seq quality for prediction purposes. Builds on PAN-3 enzyme inventories and EXP-2 expression ground truth.",
-    question: "Can pangenome-guided proteome imputation from short-read WGS recover proteomic-level features sufficient for chemotype prediction at a fraction of direct-proteomics cost?",
+    question: "Can pangenome-guided proteome imputation from short-read WGS recover enzyme-activity proxies sufficient to predict secondary metabolite yield and crop productivity at a fraction of direct-proteomics cost, scaling yield- and productivity-targeted selection economically?",
     deliverables: [
       "Published paper (the most defensible methodological IP in the entire roadmap)",
       "The hinge that lets the entire commercial pipeline scale economically",
@@ -1196,7 +1197,7 @@ const SYNOPSES = {
   "PAN-6": {
     title: "Pangenome Graph Feature Extraction",
     background: "Linearizing pangenome graphs for ML loses topology — the very thing that distinguishes graph-native models. Graph node embeddings, path-based features, and bubble-aware encodings preserve structural variation context for downstream learners. Builds on PAN-2 graph infrastructure.",
-    question: "Do graph-native features (embeddings, bubble encodings, path traversals) outperform linear-VCF features for chemotype prediction across the BWM training pipeline?",
+    question: "Do graph-native features (embeddings, bubble encodings, path traversals) outperform linear-VCF features for predicting secondary metabolite yield and crop productivity across the BWM training pipeline?",
     deliverables: [
       "Published paper",
       "Graph feature extraction library shipped into the Cannamatrix Feature Store",
@@ -1207,7 +1208,7 @@ const SYNOPSES = {
   "GP-1": {
     title: "KAGE2 + GWAS prediction baseline",
     background: "Genomic prediction in cannabis has historically used linear models on SNP arrays. KAGE2 graph-aware genotyping plus GWAS-informed feature selection on the Cannamatrix 8-phase pipeline establishes the prediction baseline. Identical to PAN-2 (single paper, dual citation).",
-    question: "Does KAGE2-based genotyping plus GWAS-informed feature selection establish a competitive prediction baseline for cannabis chemotype prediction?",
+    question: "Does KAGE2-based genotyping plus GWAS-informed feature selection establish a competitive baseline for predicting cannabinoid and terpene yield and crop productivity from genotype?",
     deliverables: [
       "Same paper as PAN-2 (dual-track citation)",
       "Production prediction baseline live in the GIR",
@@ -1217,7 +1218,7 @@ const SYNOPSES = {
   "GP-2": {
     title: "ctyper graph-aware genotyping · structurally complex regions",
     background: "ctyper is purpose-built for structurally complex regions (paralogs, CNVs, large indels) where KAGE2 struggles. Cannabinoid synthase loci and trichome-trait QTLs are exactly the regions ctyper handles best. Builds on PAN-4 paralog characterization.",
-    question: "Does ctyper-based genotyping in structurally complex regions improve prediction over KAGE2 alone, particularly for synthase-burdened phenotypes?",
+    question: "Does ctyper-based genotyping in structurally complex regions (synthase paralogs, trichome QTLs) improve yield and crop productivity prediction over KAGE2 alone, especially where paralog copy number drives finished-cannabinoid output?",
     deliverables: [
       "Published paper",
       "Production deployment of dual-genotyper pipeline (KAGE2 standard + ctyper for hard regions)",
@@ -1227,7 +1228,7 @@ const SYNOPSES = {
   "GP-3": {
     title: "+ synthase structural features & sink burden · drift monitoring (F1/F2)",
     background: "Predictions degrade when training distributions drift from production distributions. Cannamatrix's first F1/F2 cohort grows (CD-3) provide the first natural test of model stability across generations. Integrates PAN-4 sink burden and PAN-6 graph features.",
-    question: "Do synthase structural features + sink burden quantification improve prediction in F1/F2 over the GP-2 baseline, and how much chemotype drift accumulates per generation under MAS?",
+    question: "Do synthase functional classification (productive vs sink-acting paralogs) plus sink-burden quantification improve yield and crop productivity prediction in F1/F2 over GP-2, and how much yield/productivity drift accumulates per generation under MAS?",
     deliverables: [
       "Published paper",
       "Drift monitoring as a productized GIR feature (changes flagged per generation)",
@@ -1238,7 +1239,7 @@ const SYNOPSES = {
   "GP-4": {
     title: "Training data curation · multi-omics corpus for BWM training",
     background: "Foundation models scale with curated data. The BWM capstone needs a unified multi-omics corpus: genomic (PAN-3, PAN-6), proteomic (PAN-5), transcriptomic (EXP-2/EXP-3), and methylomic (EPI-1). Curation methodology, quality scoring, and pretraining task design are themselves novel contributions.",
-    question: "Can a curated multi-omics corpus across the cannabis pangenome support self-supervised pretraining of a cannabis-specific bio world model?",
+    question: "Can a curated multi-omics corpus across the cannabis pangenome support self-supervised pretraining of a BWM that predicts secondary metabolite yield and crop productivity from genotype, transcriptome, and methylome inputs?",
     deliverables: [
       "Published paper (curation methodology)",
       "Trained model checkpoint candidate for GP-Final",
@@ -1249,7 +1250,7 @@ const SYNOPSES = {
   "GP-Final": {
     title: "BWM-integrated cannabis world model · CAPSTONE",
     background: "A bio world model (BWM) treats sequence, expression, structure, and phenotype as layers in a unified generative model. Cannamatrix's full data stack — pangenome, GWAS, expression, methylome, chemotype, clinical — provides the layered substrate. Builds on every paper in PAN, GP, EXP, and EPI tracks.",
-    question: "Can a multi-modal cannabis world model trained on the Cannamatrix corpus achieve prediction quality and breeding-design utility beyond ensemble baselines (Random Forest + Chemception)?",
+    question: "Can a multi-modal cannabis BWM trained on the Cannamatrix corpus predict secondary metabolite yield and crop productivity, informing breeding design for high-yield, high-productivity, on-target chemotypes beyond ensemble baselines (Random Forest + Chemception)?",
     deliverables: [
       "Published paper (architecture + benchmarks; weights remain trade secret)",
       "The capstone scientific deliverable of the decade",
@@ -1260,7 +1261,7 @@ const SYNOPSES = {
   "GP-Sex": {
     title: "X-linked dosage sex / hermie prediction · ships in GIR Sept 2026 · Patent #3",
     background: "Cannabis sex determination is XY-like with X-linked dosage; hermaphroditism is environmentally and genetically mediated. Existing markers are panel-specific and break across pangenome haplotypes. Cannamatrix's graph-aware genotyping enables haplotype-resolved X-linked dosage estimation.",
-    question: "Does X-linked dosage estimation on the pangenome graph predict sex and hermie probability more reliably than current marker-panel approaches?",
+    question: "Does X-linked dosage estimation on the pangenome graph predict sex and hermie probability reliably enough to cull unstable plants early, eliminating hermie-driven yield and productivity losses in flowering cohorts?",
     deliverables: [
       "Published paper",
       "Patent #3 filing",
@@ -1271,7 +1272,7 @@ const SYNOPSES = {
   "GP-LM": {
     title: "DNA foundation-model benchmarks (Evo, NT, AgroNT, BWM)",
     background: "General-purpose DNA foundation models (Evo, Nucleotide Transformer, AgroNT) claim cross-species generalization but have been minimally tested on cannabis. The BWM is Cannamatrix's domain-specific competitor; this paper benchmarks them head-to-head.",
-    question: "Do generalist DNA LMs match the BWM on cannabis chemotype prediction tasks, or does domain-specific training meaningfully outperform?",
+    question: "Do generalist DNA LMs match the BWM on cannabis secondary metabolite yield and productivity prediction, or does domain-specific training on yield- and productivity-labeled data meaningfully outperform?",
     deliverables: [
       "Published benchmarks paper",
       "Public positioning of BWM vs. commodified DNA LMs",
@@ -1281,7 +1282,7 @@ const SYNOPSES = {
   "GP-GxE": {
     title: "Multi-site GxE study · 24 genotypes × 6 sites · grant-gated",
     background: "Genotype × environment interactions are large in cannabis (terpene volatility, cannabinoid ratio shifts) but rarely quantified at multi-site scale. USDA AFRI / NSF Plant Genome RFAs fit the design. Builds on PAN-2 GWAS infrastructure.",
-    question: "How much chemotype variance is explained by environment, and which loci drive significant GxE in cannabis?",
+    question: "How much secondary metabolite yield and productivity variance is explained by environment, and which loci drive significant GxE so growers can match high-yield, high-productivity genotypes to site conditions?",
     deliverables: [
       "Published paper",
       "Grant-funded research arm (USDA AFRI / NSF Plant Genome target)",
@@ -1292,7 +1293,7 @@ const SYNOPSES = {
   "EXP-2": {
     title: "Pangenomic Panproteome Expression Atlas",
     background: "Cannabis tissue-specific expression atlases exist but are reference-locked to a single accession. A pan-proteome atlas mapping expression onto haplotype-resolved pangenome coordinates anchors imputation models. Direct ground truth for PAN-5 imputation.",
-    question: "Can a haplotype-resolved expression atlas across cannabis tissues + chemotypes provide ground truth for pangenome-guided proteome imputation?",
+    question: "Can a haplotype-resolved expression atlas link pathway transcription to finished secondary metabolite yield and crop productivity, providing ground truth for proteome imputation and yield/productivity prediction?",
     deliverables: [
       "Published paper (paired-release candidate with EPI-1)",
       "Atlas data into Feature Store",
@@ -1303,7 +1304,7 @@ const SYNOPSES = {
   "EXP-3": {
     title: "Wet RNA-seq atlas with commercial grower partner",
     background: "Lab-environment expression atlases miss commercial conditions (artificial lighting, stress states, harvest timing, post-harvest dynamics). A commercial grower partnership provides production-realistic expression data the field has never had at scale.",
-    question: "How does commercial-condition RNA-seq differ from research-condition expression, and which trait-relevant pathways shift under production?",
+    question: "Which yield- and productivity-relevant pathways shift under commercial conditions (artificial lighting, stress states, harvest timing) versus research conditions, and how do those shifts depress or boost finished secondary metabolite output?",
     deliverables: [
       "Published paper",
       "Commercial-condition expression dataset in Feature Store",
@@ -1314,7 +1315,7 @@ const SYNOPSES = {
   "SCI-1": {
     title: "Signature Cultivar Index + PanSel Jaccard methodology",
     background: "Cultivar uniqueness is currently asserted via name, lineage, or hand-picked SNP panels — none of which are reproducible standards. The SCI combines SNP uniqueness + chemotype uniqueness on the PanSel sweep-aware framework, producing a citable Jaccard-based metric. Pairs with the GIR collision probability framework (Formulas 10/11: visible vs. anchored entropy) and the VCF SHA-256 hash anchor.",
-    question: "Does the SCI provide a defensible, reproducible metric for distinguishing cultivars at IP, regulatory, and breeding-decision levels?",
+    question: "Does the SCI provide a defensible, reproducible metric for distinguishing yield- and productivity-improved cultivars at IP, regulatory, and breeding-decision levels, protecting investment in high-yield, high-productivity lines?",
     deliverables: [
       "Published paper",
       "SCI as a citable industry standard (the GVR is the IP artifact; SCI is the derivative novelty / breeding-decision metric)",
@@ -1325,7 +1326,7 @@ const SYNOPSES = {
   "EPI-1": {
     title: "Cannabis Methylome Atlas",
     background: "DNA methylation drives cannabis sex stability, stress response, and likely chemotype consistency across generations. No published cannabis methylome atlas spans modern cultivar diversity at pangenome resolution. Cannamatrix's bisulfite-seq + pangenome alignment establishes the modality.",
-    question: "Does a pangenome-aligned methylome atlas reveal differentially methylated regions associated with stable chemotype expression and sex/hermie liability?",
+    question: "Does a pangenome-aligned methylome atlas reveal differentially methylated regions that explain generation-to-generation drift in secondary metabolite yield, crop productivity, and sex/hermie liability, enabling epigenetic stabilization of high-yield, high-productivity lines?",
     deliverables: [
       "Published paper (paired-release with EXP-2)",
       "Methylome data into Feature Store",
@@ -1336,7 +1337,7 @@ const SYNOPSES = {
   "CD-1": {
     title: "Ideal Cultivar Framework · chemotype targets per indication",
     background: "Cultivars are typically described by THC/CBD ratio plus a few terpenes, not against indication-specific chemotype targets. Cannamatrix's expanded panel (cannabinoids + 45 terpenes + minors) supports indication-stratified target definition. Synthesizes early MC-track signals with literature.",
-    question: "Can chemotype targets be defined per therapeutic indication (pain, anxiety, sleep, anti-inflammation) and translated into breeder-actionable ideotypes?",
+    question: "Can chemotype targets, including productivity thresholds (yield, stability, plant vigor), be defined per therapeutic indication and translated into breeder-actionable ideotypes?",
     deliverables: [
       "Published paper",
       "The reference framework for the entire CD track",
@@ -1347,7 +1348,7 @@ const SYNOPSES = {
   "CD-2": {
     title: "Reference Strain Catalog (96-cultivar set)",
     background: "Cannamatrix's 96-cultivar reference set spans the chemotype space; a formal catalog with full chemotype + genotype profile is the citable reference the field has been missing. Each cultivar is genotyped on the pangenome with 18 cannabinoids + 45 terpenes characterized.",
-    question: "Does the 96-cultivar reference set adequately cover chemotype space for downstream ML and breeding decisions, and how is residual coverage gaps best filled?",
+    question: "Does the 96-cultivar reference set adequately cover both chemotype space and crop-productivity space (yield, vigor, stability) for downstream ML and breeding decisions, and how are residual coverage gaps best filled?",
     deliverables: [
       "Published paper",
       "Reference catalog as a citable industry asset",
@@ -1358,7 +1359,7 @@ const SYNOPSES = {
   "CD-3": {
     title: "First MAS Cohort F1 results · uses GP-3 + D1 + D3",
     background: "Marker-assisted selection (MAS) compresses breeding cycles by selecting at the seedling stage. Cannamatrix's first MAS cohort is the first prospective test of the GP stack on real F1 outcomes. Crosses leverage Green Luster Phenos (GLP) male library; royalty-bearing under partnership.",
-    question: "Does GP-3-driven MAS improve F1 chemotype hit rate over conventional phenotype-only selection?",
+    question: "Does GP-3-driven MAS improve F1 chemotype hit rate AND finished secondary metabolite yield over phenotype-only selection?",
     deliverables: [
       "Published paper",
       "First prospective validation of the prediction-to-cultivar loop",
@@ -1369,7 +1370,7 @@ const SYNOPSES = {
   "CD-4": {
     title: "F2/F3 stabilized cultivars + commercial releases",
     background: "F1 hits don't fix until F2/F3 of selfing or sib-mating. Stable, commercializable cultivars require demonstrated phenotype consistency across generations. First releases under the GLP exclusive-distributor partnership.",
-    question: "Do MAS-selected F1 lines stabilize predictably through F2/F3 with chemotype variance below commercial thresholds?",
+    question: "Do MAS-selected F1 lines stabilize predictably through F2/F3 with chemotype variance and yield consistency below commercial thresholds?",
     deliverables: [
       "Published paper",
       "First commercial cultivar releases (joint Cannamatrix × GLP)",
@@ -1380,7 +1381,7 @@ const SYNOPSES = {
   "CD-5": {
     title: "Cohort II MAS strains · new chemotype targets · expanded indication panel",
     background: "Cohort II expands beyond the initial chemotype targets to indication-specific designs informed by MC-2/MC-3 readouts. Iterates the CD-1 framework with empirical indication data.",
-    question: "Do indication-targeted chemotype designs (informed by MC-2/MC-3 outcomes) outperform generic high-cannabinoid lines on patient-relevant endpoints?",
+    question: "Do indication-targeted chemotype designs (informed by MC-2/MC-3 outcomes) outperform generic high-cannabinoid lines on both patient-relevant endpoints AND finished crop productivity at commercial scale?",
     deliverables: [
       "Published paper",
       "Second commercial cohort releases",
@@ -1391,7 +1392,7 @@ const SYNOPSES = {
   "CD-6": {
     title: "F4/F5 pure-line releases · phenotype consistency across 5 generations",
     background: "True-breeding pure lines require F4/F5+ stabilization. No cannabis breeder has published genotype-anchored F4/F5 chemotype consistency data at scale. Pure lines anchor the premium tier of the commercial cultivar program.",
-    question: "How tightly do MAS-derived pure lines maintain chemotype across F4/F5, and what residual heterozygosity persists?",
+    question: "How tightly do MAS-derived pure lines maintain chemotype AND productivity (yield, vigor, stability) across F4/F5, and what residual heterozygosity persists?",
     deliverables: [
       "Published paper",
       "Pure-line cultivar releases (premium tier)",
@@ -1510,7 +1511,7 @@ const SYNOPSES = {
   "CFL-1": {
     title: "Cannaflavin biosynthesis pathway · HMMER + Boltz2 on PAN-3 substrate",
     background: "Cannaflavins (canflavin A, B, C) are flavonoid-prenyl compounds with documented anti-inflammatory activity but unclear biosynthetic origin. PAN-3 atlas covers prenyltransferases and methyltransferases relevant to cannaflavin biosynthesis; this paper applies Boltz2 docking to the candidate enzyme set.",
-    question: "Can the cannaflavin biosynthetic pathway be reconstructed from PAN-3 enzyme family hits + Boltz2 docking, and which prenyl/methyl transferase paralogs drive cannaflavin abundance variation?",
+    question: "Can the cannaflavin biosynthetic pathway be reconstructed from PAN-3 enzyme hits + Boltz2 docking, and which prenyl/methyl transferase paralogs limit or boost cannaflavin productivity (precursor flux + finished product yield)?",
     deliverables: [
       "Published paper",
       "First systematic mapping of cannaflavin biosynthesis",
@@ -1521,7 +1522,7 @@ const SYNOPSES = {
   "CFL-2": {
     title: "Cannaflavin GWAS · flavone-prenyl variation across PAN-2 cohort",
     background: "PAN-2 cohort genotypes plus extended chemotype panel including cannaflavins enable the first cannaflavin GWAS at scale. Builds on CFL-1 candidate enzyme list and PAN-2 graph-aware GWAS pipeline.",
-    question: "Which loci control cannaflavin abundance, and how do those loci relate to canonical flavonoid pathway genes?",
+    question: "Which loci control cannaflavin productivity (precursor supply, synthase copy and activity, pathway flux), and how do those loci relate to canonical flavonoid pathway genes?",
     deliverables: [
       "Published paper",
       "Cannaflavin breeding markers",
@@ -1531,7 +1532,7 @@ const SYNOPSES = {
   "CFL-3": {
     title: "Cannaflavin-targeted cultivar design + first F1",
     background: "Cannaflavins have not been a breeding target despite documented anti-inflammatory activity. CFL-2 markers + GP-3 stack enable the first cannaflavin-targeted MAS cycle.",
-    question: "Can MAS deliver F1 lines with measurably elevated cannaflavin content over commercial baseline?",
+    question: "Can MAS deliver F1 lines with measurably elevated cannaflavin productivity (finished cannaflavin content with maintained plant vigor) over commercial baseline?",
     deliverables: [
       "Published paper",
       "First cannaflavin-elevated cultivar (premium-tier release candidate)",
@@ -1574,7 +1575,7 @@ const SYNOPSES = {
   "VSC-2": {
     title: "VSC docking + substrate specificity",
     background: "PAN-1 established structural plausibility for the cannabis alliinase via Boltz2. VSC-2 extends to docking + substrate specificity to identify which sulfur substrates the cannabis enzyme prefers — a step toward functional characterization without requiring wetlab.",
-    question: "What sulfur substrates does the cannabis alliinase preferentially bind, and how does substrate specificity differ from allium alliinases?",
+    question: "What sulfur substrates does the cannabis alliinase preferentially bind, and what does substrate specificity imply for engineering or breeding-led boosts in VSC productivity (substrate supply + enzyme activity)?",
     deliverables: [
       "Published paper",
       "Substrate-specificity profile guides VSC-3 GWAS trait definition",
@@ -1584,7 +1585,7 @@ const SYNOPSES = {
   "VSC-3": {
     title: "Volatile Sulfur GWAS · alliinase + sulfur loci across PAN-2 cohort",
     background: "PAN-2 cohort genotypes plus sulfur compound chemotypes enable the first volatile sulfur GWAS in cannabis. Builds on VSC-2 substrate predictions and PAN-2 graph-aware GWAS pipeline.",
-    question: "Which loci beyond the alliinase candidate drive volatile sulfur compound variation, and what is the genetic architecture of cannabis sulfur metabolism?",
+    question: "Which loci beyond the alliinase candidate drive VSC productivity (sulfur precursor pools, alliinase copy and activity, downstream lyase steps), and what is the genetic architecture of cannabis sulfur metabolism?",
     deliverables: [
       "Published paper",
       "VSC-targeted breeding markers",
@@ -1655,7 +1656,7 @@ const SYNOPSES = {
   "VSC-10": {
     title: "VSC-driven cultivar series · sulfur-enriched aroma profile lines",
     background: "VSC-3 markers + GP-3 stack enable VSC-targeted MAS. Sulfur-enriched aroma profiles (savory, allium-adjacent) are a novel commercial chemotype space.",
-    question: "Can MAS deliver cultivars with measurably elevated VSC content and consumer-discernible aroma profile shifts?",
+    question: "Can MAS deliver cultivars with measurably elevated VSC productivity (finished VSC content + plant vigor) and consumer-discernible aroma profile shifts?",
     deliverables: [
       "Published paper",
       "First VSC-elevated cultivar releases — premium / specialty positioning",
