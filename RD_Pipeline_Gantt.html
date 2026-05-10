@@ -1976,7 +1976,7 @@ const LABELS = {
 };
 
 const GROUPS = [
-  {
+{
     id: "pan", className: "grp-pan",
     name: "Pangenomics Core",
     tag: "PAN-1 → PAN-6 · Foundational",
@@ -1989,7 +1989,7 @@ const GROUPS = [
       { id: "PAN-6", name: "Pangenome Graph Feature Extraction", subname: "graph-native features feeding Genomic Prediction & Bio World Model", segs: [seg(5, 7, "active"), s1(8, "write"), s1(9, "submit")] },
     ]
   },
-  {
+{
     id: "gp", className: "grp-gp",
     name: "GP Main Prediction Series",
     tag: "Baseline → BWM Capstone",
@@ -2001,7 +2001,7 @@ const GROUPS = [
       { id: "GP-Final", name: "BWM-integrated cannabis world model ", subname: "capstone · weights trade secret", segs: [seg(0, 6, "prep"), seg(7, 15, "active"), s1(16, "write"), s1(17, "submit")] },
     ]
   },
-  {
+{
     id: "spin", className: "grp-spin",
     name: "GP Spinoffs · Sibling Papers",
     tag: "Independent · do not feed GP-Final",
@@ -2011,16 +2011,7 @@ const GROUPS = [
       { id: "GP-GxE", name: "Multi-site GxE study · 24 genotypes × 6 sites ", subname: "grant-gated · USDA AFRI / NSF Plant Genome", segs: [seg(2, 3, "grant"), seg(8, 10, "lab"), seg(11, 13, "active"), s1(14, "submit")] },
     ]
   },
-  {
-    id: "exp", className: "grp-exp",
-    name: "Expression Atlases",
-    tag: "EXP · gates on PAN-5",
-    tasks: [
-      { id: "EXP-2", name: "Pangenomic Panproteome Expression Atlas", segs: [s1(0, "prep"), s1(1, "active"), s1(2, "submit")] },
-      { id: "EXP-3", name: "Wet RNA-seq atlas with commercial grower partner", segs: [seg(8, 9, "lab"), seg(10, 11, "active"), s1(12, "write"), s1(12, "submit")] },
-    ]
-  },
-  {
+{
     id: "sci", className: "grp-sci",
     name: "Signature Cultivar Index",
     tag: "SCI · citable standards",
@@ -2028,46 +2019,7 @@ const GROUPS = [
       { id: "SCI-1", name: "Signature Cultivar Index + PanSel Jaccard methodology", segs: [s1(0, "prep"), s1(1, "write"), s1(2, "submit")] },
     ]
   },
-  {
-    id: "epi", className: "grp-epi",
-    name: "Epigenetics",
-    tag: "EPI · novel modality",
-    tasks: [
-      { id: "EPI-1", name: "Cannabis Methylome Atlas ", subname: "pair-release candidate with EXP-2", segs: [s1(7, "prep"), seg(8, 9, "lab"), s1(10, "write"), s1(10, "submit")] },
-    ]
-  },
-  {
-    id: "cd", className: "grp-cd",
-    name: "Ideal Cultivar Design Track",
-    tag: "Cultivar · biological time",
-    tasks: [
-      { id: "CD-1", name: "Ideal Cultivar Framework ", subname: "chemotype targets per indication", segs: [seg(1, 2, "prep"), seg(3, 4, "active"), s1(5, "submit")] },
-      { id: "CD-2", name: "Reference Strain Catalog ", subname: "(96-cultivar set)", segs: [seg(3, 4, "prep"), seg(5, 6, "active"), seg(7, 8, "write"), s1(9, "submit")] },
-      { id: "CD-3", name: "First MAS Cohort F1 results ", subname: "uses GP-3 + D1 + D3", segs: [seg(1, 6, "grow"), seg(7, 8, "pheno"), s1(11, "submit")] },
-      { id: "CD-4", name: "F2/F3 stabilized cultivars + commercial releases", segs: [seg(7, 8, "prep"), seg(9, 14, "grow"), seg(15, 17, "pheno"), s1(19, "submit")] },
-      { id: "CD-5", name: "Cohort II MAS strains ", subname: "new chemotype targets · expanded indication panel", segs: [seg(15, 16, "prep"), seg(17, 22, "grow"), seg(23, 24, "pheno"), s1(25, "submit")] },
-      { id: "CD-6", name: "F4/F5 pure-line releases ", subname: "phenotype consistency across 5 generations", segs: [seg(20, 22, "prep"), seg(23, 28, "grow"), seg(29, 30, "pheno"), s1(31, "submit")] },
-      { id: "CD-7", name: "10-year cultivar performance retrospective ", subname: "genetic drift, terpene stability, market fit", segs: [seg(28, 32, "active"), seg(33, 34, "write"), s1(35, "submit")] },
-      { id: "CD-8", name: "Therapeutic ideotype Cohort III ", subname: "chronic-pain + sleep-targeted lines", segs: [seg(31, 33, "prep"), seg(34, 38, "grow"), s1(39, "submit")] },
-    ]
-  },
-  {
-    id: "mc", className: "grp-mc",
-    name: "Medical Comparative Track",
-    tag: "MC · regulatory time",
-    tasks: [
-      { id: "MC-1", name: "Comparative effectiveness methodology + registry protocol", segs: [seg(3, 4, "prep"), seg(5, 6, "write"), s1(7, "submit")] },
-      { id: "REG", name: "Registry infrastructure ", subname: "build → IRB → live", segs: [seg(3, 4, "build"), seg(5, 6, "irb"), seg(7, 39, "live")] },
-      { id: "MC-2", name: "Chronic pain strain comparison ", subname: "(300–500 patients)", segs: [seg(5, 6, "prep"), seg(7, 8, "irb"), seg(9, 12, "enroll"), s1(13, "submit")] },
-      { id: "MC-3", name: "Anxiety + sleep strain comparison ", subname: "(~200 patients)", segs: [seg(7, 8, "prep"), seg(9, 10, "irb"), seg(11, 14, "enroll"), s1(15, "submit")] },
-      { id: "MC-4", name: "Patient-reported outcomes database paper", segs: [seg(11, 12, "active"), seg(13, 14, "write"), s1(15, "submit")] },
-      { id: "MC-5", name: "Pharmacokinetic profiles by chemotype ", subname: "partner-gated · external pharm", segs: [seg(7, 8, "prep"), seg(9, 12, "active"), seg(13, 14, "write"), s1(15, "submit")] },
-      { id: "MC-6", name: "5-year longitudinal patient outcomes ", subname: "cohort follow-up of MC-2 / MC-3", segs: [seg(15, 16, "prep"), seg(17, 26, "enroll"), seg(27, 28, "write"), s1(29, "submit")] },
-      { id: "MC-7", name: "Decade-scale cannabis safety + outcomes registry", segs: [seg(20, 22, "prep"), seg(23, 34, "enroll"), seg(35, 36, "write"), s1(37, "submit")] },
-      { id: "MC-8", name: "Pediatric & geriatric stratified outcomes ", subname: "age-cohort comparative", segs: [seg(22, 24, "prep"), seg(25, 30, "enroll"), seg(31, 32, "write"), s1(33, "submit")] },
-    ]
-  },
-  {
+{
     id: "cfl", className: "grp-cfl",
     name: "Cannaflavins · Cross-Track",
     tag: "CFL · cleanest white space",
@@ -2080,7 +2032,7 @@ const GROUPS = [
       { id: "CFL-6", name: "Cannaflavin clinical Phase II readout", segs: [seg(26, 30, "enroll"), seg(31, 32, "write"), s1(33, "submit")] },
     ]
   },
-  {
+{
     id: "vsc", className: "grp-vsc",
     name: "Volatile Sulfur · Cross-Track",
     tag: "VSC · software first, wetlab second",
@@ -2100,7 +2052,55 @@ const GROUPS = [
       { id: "VSC-12", name: "VSC entourage effects in clinical settings ", subname: "pair with MC-7 longitudinal", segs: [seg(31, 35, "enroll"), seg(36, 37, "write"), s1(38, "submit")] },
     ]
   },
-  {
+{
+    id: "exp", className: "grp-exp",
+    name: "Expression Atlases",
+    tag: "EXP · gates on PAN-5",
+    tasks: [
+      { id: "EXP-2", name: "Pangenomic Panproteome Expression Atlas", segs: [s1(0, "prep"), s1(1, "active"), s1(2, "submit")] },
+      { id: "EXP-3", name: "Wet RNA-seq atlas with commercial grower partner", segs: [seg(8, 9, "lab"), seg(10, 11, "active"), s1(12, "write"), s1(12, "submit")] },
+    ]
+  },
+{
+    id: "epi", className: "grp-epi",
+    name: "Epigenetics",
+    tag: "EPI · novel modality",
+    tasks: [
+      { id: "EPI-1", name: "Cannabis Methylome Atlas ", subname: "pair-release candidate with EXP-2", segs: [s1(7, "prep"), seg(8, 9, "lab"), s1(10, "write"), s1(10, "submit")] },
+    ]
+  },
+{
+    id: "cd", className: "grp-cd",
+    name: "Ideal Cultivar Design Track",
+    tag: "Cultivar · biological time",
+    tasks: [
+      { id: "CD-1", name: "Ideal Cultivar Framework ", subname: "chemotype targets per indication", segs: [seg(1, 2, "prep"), seg(3, 4, "active"), s1(5, "submit")] },
+      { id: "CD-2", name: "Reference Strain Catalog ", subname: "(96-cultivar set)", segs: [seg(3, 4, "prep"), seg(5, 6, "active"), seg(7, 8, "write"), s1(9, "submit")] },
+      { id: "CD-3", name: "First MAS Cohort F1 results ", subname: "uses GP-3 + D1 + D3", segs: [seg(1, 6, "grow"), seg(7, 8, "pheno"), s1(11, "submit")] },
+      { id: "CD-4", name: "F2/F3 stabilized cultivars + commercial releases", segs: [seg(7, 8, "prep"), seg(9, 14, "grow"), seg(15, 17, "pheno"), s1(19, "submit")] },
+      { id: "CD-5", name: "Cohort II MAS strains ", subname: "new chemotype targets · expanded indication panel", segs: [seg(15, 16, "prep"), seg(17, 22, "grow"), seg(23, 24, "pheno"), s1(25, "submit")] },
+      { id: "CD-6", name: "F4/F5 pure-line releases ", subname: "phenotype consistency across 5 generations", segs: [seg(20, 22, "prep"), seg(23, 28, "grow"), seg(29, 30, "pheno"), s1(31, "submit")] },
+      { id: "CD-7", name: "10-year cultivar performance retrospective ", subname: "genetic drift, terpene stability, market fit", segs: [seg(28, 32, "active"), seg(33, 34, "write"), s1(35, "submit")] },
+      { id: "CD-8", name: "Therapeutic ideotype Cohort III ", subname: "chronic-pain + sleep-targeted lines", segs: [seg(31, 33, "prep"), seg(34, 38, "grow"), s1(39, "submit")] },
+    ]
+  },
+{
+    id: "mc", className: "grp-mc",
+    name: "Medical Comparative Track",
+    tag: "MC · regulatory time",
+    tasks: [
+      { id: "MC-1", name: "Comparative effectiveness methodology + registry protocol", segs: [seg(3, 4, "prep"), seg(5, 6, "write"), s1(7, "submit")] },
+      { id: "REG", name: "Registry infrastructure ", subname: "build → IRB → live", segs: [seg(3, 4, "build"), seg(5, 6, "irb"), seg(7, 39, "live")] },
+      { id: "MC-2", name: "Chronic pain strain comparison ", subname: "(300–500 patients)", segs: [seg(5, 6, "prep"), seg(7, 8, "irb"), seg(9, 12, "enroll"), s1(13, "submit")] },
+      { id: "MC-3", name: "Anxiety + sleep strain comparison ", subname: "(~200 patients)", segs: [seg(7, 8, "prep"), seg(9, 10, "irb"), seg(11, 14, "enroll"), s1(15, "submit")] },
+      { id: "MC-4", name: "Patient-reported outcomes database paper", segs: [seg(11, 12, "active"), seg(13, 14, "write"), s1(15, "submit")] },
+      { id: "MC-5", name: "Pharmacokinetic profiles by chemotype ", subname: "partner-gated · external pharm", segs: [seg(7, 8, "prep"), seg(9, 12, "active"), seg(13, 14, "write"), s1(15, "submit")] },
+      { id: "MC-6", name: "5-year longitudinal patient outcomes ", subname: "cohort follow-up of MC-2 / MC-3", segs: [seg(15, 16, "prep"), seg(17, 26, "enroll"), seg(27, 28, "write"), s1(29, "submit")] },
+      { id: "MC-7", name: "Decade-scale cannabis safety + outcomes registry", segs: [seg(20, 22, "prep"), seg(23, 34, "enroll"), seg(35, 36, "write"), s1(37, "submit")] },
+      { id: "MC-8", name: "Pediatric & geriatric stratified outcomes ", subname: "age-cohort comparative", segs: [seg(22, 24, "prep"), seg(25, 30, "enroll"), seg(31, 32, "write"), s1(33, "submit")] },
+    ]
+  },
+{
     id: "cex", className: "grp-cex",
     name: "CEX · Method Transfer / Crop Expansion",
     tag: "JV-funded ports · Tier 1 → 4 · 25 papers",
