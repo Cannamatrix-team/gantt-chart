@@ -948,7 +948,7 @@
     <h1 class="hero-h1">Research &amp; Development</h1>
     <div class="hero-sublabel">Pipeline Visionary Gantt</div>
     <div class="hero-graphic" aria-hidden="true">
-      <svg viewBox="0 0 1200 360" preserveAspectRatio="xMidYMid meet">
+      <svg viewBox="0 0 1200 400" preserveAspectRatio="xMidYMid meet">
         <defs>
           <linearGradient id="trunkG" x1="0" x2="1" y1="0" y2="0">
             <stop offset="0" stop-color="#fff" stop-opacity="0.98"/>
@@ -1065,32 +1065,30 @@
           <text x="1100" y="285" text-anchor="middle" font-family="Poppins,sans-serif" font-weight="700" font-size="12" letter-spacing="1.3" fill="#fff">CLINICAL TRIALS</text>
         </a>
 
-        <!-- CEX · Method Transfer / Crop Expansion: 4th branch off GP, drawing inheritance from PAN -->
+        <!-- CEX · Crop Expansion: 4th branch off GP, drawing inheritance from PAN -->
         <!-- GP → CEX (formal data flow, solid like other GP branches) -->
-        <path d="M420 196 C 450 196, 450 324, 480 324" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="2" stroke-linecap="round"/>
+        <path d="M420 196 C 450 196, 450 358, 480 358" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="2" stroke-linecap="round"/>
         <!-- PAN → CEX (methodological inheritance, dashed) -->
         <g fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1.6" stroke-linecap="round" stroke-dasharray="4 4">
-          <path d="M85 196 L 85 324 L 480 324"/>
+          <path d="M85 196 L 85 358 L 480 358"/>
         </g>
         <a href="#thread-cex">
-          <rect x="480" y="304" rx="18" ry="18" width="240" height="40" fill="rgba(255,255,255,0.22)" stroke="rgba(255,255,255,0.85)"/>
-          <text x="600" y="322" text-anchor="middle" font-family="Poppins,sans-serif" font-weight="700" font-size="12" letter-spacing="1.4" fill="#fff">METHOD TRANSFER</text>
-          <text x="600" y="338" text-anchor="middle" font-family="Poppins,sans-serif" font-weight="700" font-size="11" letter-spacing="1.6" fill="#01B183">CEX · CROP EXPANSION</text>
+          <rect x="480" y="342" rx="16" ry="16" width="240" height="32" fill="rgba(255,255,255,0.22)" stroke="rgba(255,255,255,0.85)"/>
+          <text x="600" y="363" text-anchor="middle" font-family="Poppins,sans-serif" font-weight="700" font-size="12" letter-spacing="1.4" fill="#fff">CEX · CROP EXPANSION</text>
         </a>
 
-        <!-- CEX → 2 leaves on the right (tier summary + BWM feed) -->
-        <g fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.6" stroke-linecap="round">
-          <path d="M720 324 C 745 324, 745 308, 760 308"/>
-        </g>
-        <line x1="720" y1="324" x2="760" y2="340" stroke="#FFD56B" stroke-width="1.6" stroke-linecap="round" stroke-dasharray="4 4"/>
-
+        <!-- CEX → tier summary leaf -->
+        <line x1="720" y1="358" x2="760" y2="358" stroke="rgba(255,255,255,0.6)" stroke-width="1.6" stroke-linecap="round"/>
         <a href="#thread-cex">
-          <rect x="760" y="294" rx="14" ry="14" width="220" height="28" fill="rgba(255,255,255,0.16)" stroke="rgba(255,255,255,0.6)"/>
-          <text x="870" y="313" text-anchor="middle" font-family="Poppins,sans-serif" font-weight="700" font-size="11" letter-spacing="1.3" fill="#fff">25 CROPS · 4 TIERS</text>
+          <rect x="760" y="342" rx="14" ry="14" width="220" height="32" fill="rgba(255,255,255,0.16)" stroke="rgba(255,255,255,0.6)"/>
+          <text x="870" y="363" text-anchor="middle" font-family="Poppins,sans-serif" font-weight="700" font-size="11" letter-spacing="1.3" fill="#fff">25 CROPS · 4 TIERS</text>
         </a>
+
+        <!-- tier summary → multi-crop BWM destination (yellow dashed, matches BWM accent) -->
+        <line x1="980" y1="358" x2="1010" y2="358" stroke="#FFD56B" stroke-width="1.6" stroke-linecap="round" stroke-dasharray="4 4"/>
         <a href="#thread-cex">
-          <rect x="760" y="326" rx="14" ry="14" width="220" height="28" fill="rgba(255,213,107,0.18)" stroke="#FFD56B" stroke-width="1.4"/>
-          <text x="870" y="345" text-anchor="middle" font-family="Poppins,sans-serif" font-weight="700" font-size="10" letter-spacing="1.3" fill="#FFD56B">FEEDS MULTI-CROP BWM</text>
+          <rect x="1010" y="342" rx="14" ry="14" width="180" height="32" fill="rgba(255,213,107,0.18)" stroke="#FFD56B" stroke-width="1.4"/>
+          <text x="1100" y="363" text-anchor="middle" font-family="Poppins,sans-serif" font-weight="700" font-size="11" letter-spacing="1.3" fill="#FFD56B">MULTI-CROP BWM</text>
         </a>
       </svg>
     </div>
@@ -1137,7 +1135,7 @@ const TRACK_NAMES = {
   mc: "Medical Comparative Track",
   cfl: "Cannaflavins · Cross-Track",
   vsc: "Volatile Sulfur · Cross-Track",
-  cex: "CEX · Method Transfer / Crop Expansion",
+  cex: "CEX · Crop Expansion",
 };
 
 const SYNOPSES = {
@@ -1686,7 +1684,7 @@ const SYNOPSES = {
     ]
   },
 
-  /* CEX · Method Transfer / Crop Expansion (25 papers) */
+  /* CEX · Crop Expansion (25 papers) */
   "CEX-1": {
     title: "Hops (Humulus lupulus), CEX-G1 portability proof, P-CEX-1 anchor",
     background: "Sister genus to Cannabis with shared terpene synthase repertoire (myrcene, humulene, caryophyllene), and a polyketide-branch bitter acid pathway (humulone, lupulone). Hopbase reference exists; pangenome work ongoing externally (Padgitt-Cobb and collaborators). Lowest-friction port and anchor species for the cross-crop synthesis paper.",
@@ -2102,7 +2100,7 @@ const GROUPS = [
   },
 {
     id: "cex", className: "grp-cex",
-    name: "CEX · Method Transfer / Crop Expansion",
+    name: "CEX · Crop Expansion",
     tag: "JV-funded ports · Tier 1 → 4 · 25 papers",
     tasks: [
       // Tier 1 (Year 4-5): Cannabaceae adjacent, anchor for P-CEX-1
