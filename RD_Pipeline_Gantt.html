@@ -522,6 +522,7 @@
   .grp-mc    { --grp: var(--cm-blue);   background: linear-gradient(to right, rgba(37,70,144,0.05), transparent 60%); }
   .grp-cfl   { --grp: var(--cm-purple); background: linear-gradient(to right, rgba(103,64,194,0.05), transparent 60%); }
   .grp-vsc   { --grp: #0E8C88;          background: linear-gradient(to right, rgba(14,140,136,0.06), transparent 60%); }
+  .grp-cex   { --grp: #C4860A;          background: linear-gradient(to right, rgba(196,134,10,0.06), transparent 60%); }
   .group-bar { background: var(--grp); }
 
   /* Year band shading on track */
@@ -723,6 +724,7 @@
   .row.grp-mc.has-synopsis:hover   { background: rgba(37,70,144,0.06); }
   .row.grp-cfl.has-synopsis:hover  { background: rgba(103,64,194,0.06); }
   .row.grp-vsc.has-synopsis:hover  { background: rgba(14,140,136,0.08); }
+  .row.grp-cex.has-synopsis:hover  { background: rgba(196,134,10,0.08); }
   .row.has-synopsis:focus-visible {
     outline: 2px solid var(--cm-violet);
     outline-offset: -2px;
@@ -810,6 +812,7 @@
   .synopsis-track-tag.tt-mc   { background: var(--st-validate-bg); color: var(--st-validate-fg); }
   .synopsis-track-tag.tt-cfl  { background: var(--st-lab-bg);      color: var(--st-lab-fg); }
   .synopsis-track-tag.tt-vsc  { background: var(--st-gate-bg);     color: var(--st-gate-fg); }
+  .synopsis-track-tag.tt-cex  { background: var(--st-irb-bg);      color: var(--st-irb-fg); }
   .synopsis-id {
     font-family: "JetBrains Mono", monospace;
     font-size: 13px;
@@ -936,7 +939,7 @@
   <div class="hero-row">
     <img class="hero-logo" src="assets/logo-horizontal-white.png" alt="Cannamatrix">
     <div class="hero-meta">
-      <div class="hero-count"><span class="num">52</span><span class="lbl">Papers planned across 10 years</span></div>
+      <div class="hero-count"><span class="num">77</span><span class="lbl">Papers planned across 10 years</span></div>
       <span class="pill">v1.0 · May 2026</span>
     </div>
   </div>
@@ -945,7 +948,7 @@
     <h1 class="hero-h1">Research &amp; Development</h1>
     <div class="hero-sublabel">Pipeline Visionary Gantt</div>
     <div class="hero-graphic" aria-hidden="true">
-      <svg viewBox="0 0 1200 320" preserveAspectRatio="xMidYMid meet">
+      <svg viewBox="0 0 1200 360" preserveAspectRatio="xMidYMid meet">
         <defs>
           <linearGradient id="trunkG" x1="0" x2="1" y1="0" y2="0">
             <stop offset="0" stop-color="#fff" stop-opacity="0.98"/>
@@ -1061,6 +1064,34 @@
           <rect x="1010" y="264" rx="15" ry="15" width="180" height="32" fill="rgba(255,255,255,0.22)" stroke="rgba(255,255,255,0.75)"/>
           <text x="1100" y="285" text-anchor="middle" font-family="Poppins,sans-serif" font-weight="700" font-size="12" letter-spacing="1.3" fill="#fff">CLINICAL TRIALS</text>
         </a>
+
+        <!-- CEX · Method Transfer / Crop Expansion: 4th branch off GP, drawing inheritance from PAN -->
+        <!-- GP → CEX (formal data flow, solid like other GP branches) -->
+        <path d="M420 196 C 450 196, 450 324, 480 324" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="2" stroke-linecap="round"/>
+        <!-- PAN → CEX (methodological inheritance, dashed) -->
+        <g fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1.6" stroke-linecap="round" stroke-dasharray="4 4">
+          <path d="M85 196 L 85 324 L 480 324"/>
+        </g>
+        <a href="#thread-cex">
+          <rect x="480" y="304" rx="18" ry="18" width="240" height="40" fill="rgba(255,255,255,0.22)" stroke="rgba(255,255,255,0.85)"/>
+          <text x="600" y="322" text-anchor="middle" font-family="Poppins,sans-serif" font-weight="700" font-size="12" letter-spacing="1.4" fill="#fff">METHOD TRANSFER</text>
+          <text x="600" y="338" text-anchor="middle" font-family="Poppins,sans-serif" font-weight="700" font-size="11" letter-spacing="1.6" fill="#01B183">CEX · CROP EXPANSION</text>
+        </a>
+
+        <!-- CEX → 2 leaves on the right (tier summary + BWM feed) -->
+        <g fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.6" stroke-linecap="round">
+          <path d="M720 324 C 745 324, 745 308, 760 308"/>
+        </g>
+        <line x1="720" y1="324" x2="760" y2="340" stroke="#FFD56B" stroke-width="1.6" stroke-linecap="round" stroke-dasharray="4 4"/>
+
+        <a href="#thread-cex">
+          <rect x="760" y="294" rx="14" ry="14" width="220" height="28" fill="rgba(255,255,255,0.16)" stroke="rgba(255,255,255,0.6)"/>
+          <text x="870" y="313" text-anchor="middle" font-family="Poppins,sans-serif" font-weight="700" font-size="11" letter-spacing="1.3" fill="#fff">25 CROPS · 4 TIERS</text>
+        </a>
+        <a href="#thread-cex">
+          <rect x="760" y="326" rx="14" ry="14" width="220" height="28" fill="rgba(255,213,107,0.18)" stroke="#FFD56B" stroke-width="1.4"/>
+          <text x="870" y="345" text-anchor="middle" font-family="Poppins,sans-serif" font-weight="700" font-size="10" letter-spacing="1.3" fill="#FFD56B">FEEDS MULTI-CROP BWM</text>
+        </a>
       </svg>
     </div>
     </div>
@@ -1106,6 +1137,7 @@ const TRACK_NAMES = {
   mc: "Medical Comparative Track",
   cfl: "Cannaflavins · Cross-Track",
   vsc: "Volatile Sulfur · Cross-Track",
+  cex: "CEX · Method Transfer / Crop Expansion",
 };
 
 const SYNOPSES = {
@@ -1653,6 +1685,258 @@ const SYNOPSES = {
       "Likely highest-citation VSC paper in the roadmap"
     ]
   },
+
+  /* CEX · Method Transfer / Crop Expansion (25 papers) */
+  "CEX-1": {
+    title: "Hops (Humulus lupulus), CEX-G1 portability proof, P-CEX-1 anchor",
+    background: "Sister genus to Cannabis with shared terpene synthase repertoire (myrcene, humulene, caryophyllene), and a polyketide-branch bitter acid pathway (humulone, lupulone). Hopbase reference exists; pangenome work ongoing externally (Padgitt-Cobb and collaborators). Lowest-friction port and anchor species for the cross-crop synthesis paper.",
+    question: "Does the Cannamatrix architecture (graph reference build, KAGE2 plus GLIMPSE imputation, pathway-grouped feature stores, two-stage Full_R prediction, GWAS to ML handoff, SCI-style fingerprinting) port to Humulus lupulus on partner-licensed pangenome assets?",
+    deliverables: [
+      "P-CEX-1: Cross-crop transfer of pangenome-anchored secondary metabolite prediction, validation on Humulus lupulus (bioRxiv Yr 5, peer-reviewed Yr 6); anchored to CEX-G4",
+      "JV shortlist: Yakima Chief, John I Haas, S.S. Steiner, AB InBev, Heineken",
+      "BD asset and method-transfer reference for Tier 2, Tier 3, Tier 4 conversations"
+    ]
+  },
+  "CEX-2": {
+    title: "Lavender (Lavandula angustifolia, L. intermedia), Tier 2",
+    background: "Linalool, linalyl acetate, camphor. Reference genomes available; pangenome assets emerging. Pathway-grouped feature stores, terpene synthase repertoire features, and two-stage Full_R port nearly intact.",
+    question: "Do Cannamatrix terpene synthase feature engineering and Full_R chemotype prediction port to Lavandula on partner-funded pangenome and expression atlases?",
+    deliverables: [
+      "Crop-specific feature store and prediction model (CEX-N analog of GP stack)",
+      "JV shortlist: DoTerra, Young Living, Givaudan, Firmenich, IFF, Robertet, Mane, Symrise",
+      "P-CEX-2: published paper on Lavandula chemotype prediction transfer"
+    ]
+  },
+  "CEX-3": {
+    title: "Mint (Mentha piperita, M. spicata), Tier 2",
+    background: "Menthol, menthone, pulegone, carvone. Multiple reference genomes; polyploidy is a complication for graph construction. Direct method transfer from cannabis terpene workflow.",
+    question: "Does the Cannamatrix pipeline accommodate Mentha polyploidy in graph construction and KAGE2 imputation, and does Full_R recover known menthol/carvone QTLs?",
+    deliverables: [
+      "Polyploid-aware extension of the graph build playbook (PAN-derivative)",
+      "Crop-specific feature store and prediction model",
+      "JV shortlist: BASF, Wrigley (Mars), Colgate-Palmolive, AS Watson"
+    ]
+  },
+  "CEX-4": {
+    title: "Basil (Ocimum basilicum), Tier 2",
+    background: "Linalool, methyl chavicol, eugenol, geraniol. Cultivar chemotype diversity is high, providing strong signal for GWAS and prediction.",
+    question: "Does cultivar chemotype diversity in Ocimum basilicum yield prediction lift commensurate with cannabis baseline performance?",
+    deliverables: [
+      "Crop-specific feature store, GWAS, and prediction model",
+      "JV shortlist: McCormick, Kalsec, Givaudan flavor",
+      "Reference for high-diversity culinary herb prediction"
+    ]
+  },
+  "CEX-5": {
+    title: "Rosemary (Salvia rosmarinus), Tier 2",
+    background: "1,8-cineole, alpha-pinene, camphor; rosmarinic acid as polyphenol cross-reference. First Tier 2 species pairing terpene and phenolic prediction in one model.",
+    question: "Can a unified terpene plus phenolic feature store improve chemotype prediction in Salvia rosmarinus over single-class baselines?",
+    deliverables: [
+      "Combined terpene/phenolic feature store template",
+      "JV shortlist: Kemin Industries (rosemary extract antioxidant), Naturex/Givaudan, Symrise",
+      "Reference for dual-pathway crop prediction"
+    ]
+  },
+  "CEX-6": {
+    title: "Sage (Salvia officinalis, S. sclarea), Tier 2",
+    background: "Thujone, sclareol, alpha-pinene; sclareol is a high-value Ambrox precursor for fragrance. Sister genus to rosemary, leveraging CEX-5 infrastructure.",
+    question: "Does sclareol abundance prediction enable selection for fragrance-precursor Ambrox economics in S. sclarea?",
+    deliverables: [
+      "Sclareol-targeted prediction and selection model",
+      "JV shortlist: Firmenich, Givaudan, IFF",
+      "Demonstration of high-value fragrance-precursor breeding via prediction"
+    ]
+  },
+  "CEX-7": {
+    title: "Patchouli (Pogostemon cablin), Tier 2",
+    background: "Patchoulol and sesquiterpene fraction; cornerstone of fine fragrance, supply-constrained. Clonal propagation and limited sexual reproduction make prediction-led selection especially valuable.",
+    question: "Can prediction-led selection accelerate breeding cycles in clonally propagated Pogostemon cablin where conventional cycles are slow?",
+    deliverables: [
+      "Clonal-crop prediction reference",
+      "JV shortlist: Givaudan, Firmenich, Symrise, Mane",
+      "Supply-stability case for fragrance-industry partners"
+    ]
+  },
+  "CEX-8": {
+    title: "Vetiver (Chrysopogon zizanioides), Tier 2",
+    background: "Khusimol, vetiverol, sesquiterpenes; very high margin essential oil. Grass family (Poaceae), distinct from other Tier 2 Lamiaceae species; tests pipeline robustness across plant families.",
+    question: "Does the Cannamatrix pipeline generalize across plant families (Lamiaceae to Poaceae) without architectural changes?",
+    deliverables: [
+      "Cross-family generalization evidence",
+      "JV shortlist: fragrance majors (Givaudan, Firmenich, IFF, Symrise) plus Haitian and Indonesian production cooperatives",
+      "Foundation for broader monocot expansion"
+    ]
+  },
+  "CEX-9": {
+    title: "Tea tree (Melaleuca alternifolia), Tier 2",
+    background: "Terpinen-4-ol, gamma-terpinene; therapeutic essential oil and antimicrobial. Therapeutic-grade chemotype standardization (ISO 4730) makes prediction-led QC and breeding directly market-relevant.",
+    question: "Does prediction-anchored chemotype selection meet ISO 4730 specification more reliably than conventional phenotype selection?",
+    deliverables: [
+      "Spec-anchored selection model",
+      "JV shortlist: Australian Tea Tree Industry Association, Thursday Plantation, Australian Botanical Products",
+      "QC and breeding case for regulated essential oil specs"
+    ]
+  },
+  "CEX-10": {
+    title: "Citrus (Citrus limon, C. sinensis, C. paradisi), Tier 2",
+    background: "Limonene, myrcene, linalool; juice industry yields massive terpene byproduct streams. Citrus genomes are mature; pangenome assets are advanced.",
+    question: "Can prediction on Citrus pangenome graphs guide selection for byproduct terpene yield without compromising fruit-quality traits?",
+    deliverables: [
+      "Multi-trait prediction model (fruit-quality and terpene byproduct)",
+      "JV shortlist: Citrosuco, Cutrale, Florida's Natural, IFF and Givaudan flavor divisions",
+      "Industrial-byproduct optimization reference"
+    ]
+  },
+  "CEX-11": {
+    title: "Eucalyptus (Eucalyptus globulus, E. radiata), Tier 2",
+    background: "1,8-cineole, alpha-pinene; pharma-grade and pulp-industry coproduct. Forestry-scale genomics resources are well-developed.",
+    question: "Does prediction-anchored selection in Eucalyptus reduce time-to-spec for pharma-grade 1,8-cineole content?",
+    deliverables: [
+      "Forestry-scale prediction extension (long generation, large-scale planting)",
+      "JV shortlist: Sappi, Vicks (P&G), pharma-grade essential oil consolidators",
+      "Pharma-spec selection reference"
+    ]
+  },
+  "CEX-12": {
+    title: "Frankincense (Boswellia sacra, B. serrata), Tier 2",
+    background: "Alpha-pinene, boswellic acids; sustainability and CITES pressure on wild harvest creates breeding-program demand. Limited genomic resources today; pangenome construction itself is a deliverable.",
+    question: "Can a from-scratch Boswellia pangenome plus prediction stack enable sustainable cultivated supply that displaces wild harvest pressure?",
+    deliverables: [
+      "First Boswellia pangenome (PAN-derivative)",
+      "JV shortlist: Boswellia trade groups, fragrance majors, supplement-industry consolidators",
+      "Sustainability and CITES-aligned breeding case"
+    ]
+  },
+  "CEX-13": {
+    title: "Pine (Pinus spp., for terpene production), Tier 2",
+    background: "Alpha-pinene, beta-pinene, delta-3-carene; industrial-scale turpentine and naval stores chemistry. Conifer genomes are large and gymnosperm-specific, testing graph build at scale.",
+    question: "Does the minigraph-cactus build playbook scale to large gymnosperm genomes without prohibitive compute?",
+    deliverables: [
+      "Large-genome graph build benchmarks",
+      "JV shortlist: Kraton, Pinova, WestRock, Ingevity",
+      "Industrial chemistry feedstock prediction reference"
+    ]
+  },
+  "CEX-14": {
+    title: "Cacao (Theobroma cacao), Tier 3",
+    background: "Mars Cocoa Genome consortium assets exist (Matina 1-6 and successors). Flavanol polyphenols and methylxanthines (theobromine, caffeine). Multi-year phenotyping lag strengthens prediction value.",
+    question: "Do new flavonoid and methylxanthine pathway-grouped feature stores enable cacao chemotype prediction at parity with cannabis baseline despite different underlying chemistry?",
+    deliverables: [
+      "Flavanol and methylxanthine pathway-grouped feature engineering (new for Tier 3)",
+      "JV shortlist: Mars Wrigley, Hershey, Barry Callebaut, Ferrero",
+      "Reference for non-terpene-dominant crop prediction"
+    ]
+  },
+  "CEX-15": {
+    title: "Tea (Camellia sinensis), Tier 3",
+    background: "Multiple reference genomes, accumulating pangenome data. Catechin and theanine biosynthesis well-characterized. Strategy: partner with established Asian breeding programs rather than compete head-on.",
+    question: "Does catechin and theanine prediction support quality-grade selection at a level commercially actionable for Asian breeding partners?",
+    deliverables: [
+      "Catechin and theanine prediction model",
+      "JV shortlist: Unilever, Tata Consumer Products, Starbucks supply partners, ITO EN",
+      "Partnership template for established-program co-development"
+    ]
+  },
+  "CEX-16": {
+    title: "Coffee (Coffea arabica, C. canephora), Tier 3",
+    background: "Caffeine, chlorogenic acids, trigonelline; aroma volatiles include terpenes and Maillard products. Climate stress is the trait-priority driver.",
+    question: "Can prediction-led selection accelerate climate-stress tolerance breeding in Coffea without sacrificing cup-quality chemotype?",
+    deliverables: [
+      "Multi-objective prediction (stress tolerance plus cup quality)",
+      "JV shortlist: Nestle, JDE Peet's, Starbucks, Lavazza, Illy, World Coffee Research consortium",
+      "Climate-resilience breeding reference"
+    ]
+  },
+  "CEX-17": {
+    title: "Vanilla (Vanilla planifolia), Tier 3",
+    background: "Vanillin and phenolic glucosides; clonal propagation and disease pressure (Fusarium) make breeding-acceleration value high.",
+    question: "Does prediction-anchored selection identify Fusarium-resistant Vanilla clones with vanillin yield equal to or above commercial baselines?",
+    deliverables: [
+      "Disease-resistance plus yield prediction",
+      "JV shortlist: Symrise (largest vanilla integrator), Givaudan, IFF, Mars, Hershey",
+      "Clonal-disease-pressure breeding reference"
+    ]
+  },
+  "CEX-18": {
+    title: "Saffron (Crocus sativus), Tier 3",
+    background: "Crocin, picrocrocin, safranal (apocarotenoid pathway); sterile triploid, breeding-resistant, but expression and pathway prediction still applicable.",
+    question: "In a sterile-triploid crop where conventional breeding is blocked, can pathway-prediction guide cultivation conditions and clonal selection for crocin yield?",
+    deliverables: [
+      "Cultivation-condition and clonal-selection prediction model",
+      "JV shortlist: Iranian and Spanish producer cooperatives, Sahafi, premium spice consolidators",
+      "Sterile-crop prediction-led management reference"
+    ]
+  },
+  "CEX-19": {
+    title: "Wine grape (Vitis vinifera), Tier 3",
+    background: "Monoterpenes (linalool, geraniol) for muscat and aromatic varieties, plus polyphenol fraction (resveratrol, anthocyanins). Pangenome assets are advanced.",
+    question: "Does Vitis vinifera pangenome-anchored prediction over both terpene and polyphenol fractions improve varietal characterization beyond existing markers?",
+    deliverables: [
+      "Combined terpene/polyphenol prediction at scale",
+      "JV shortlist: E&J Gallo, Constellation Brands, Treasury Wine Estates, Pernod Ricard, Foundation Plant Services",
+      "Varietal-characterization and IP-defensibility reference"
+    ]
+  },
+  "CEX-20": {
+    title: "Psilocybe cubensis, Tier 4",
+    background: "Fungal genome, smaller compute footprint than plants. Psilocybin biosynthesis cluster (psiD, psiH, psiK, psiM) elucidated by Hoffmeister and colleagues in 2017. Regulatory tailwinds in Oregon, Colorado, Australia.",
+    question: "Does the Cannamatrix architecture port from plant to fungal genomes, and can it predict psilocybin and tryptamine analog content from genotype?",
+    deliverables: [
+      "Plant-to-fungal port reference (smaller-genome benchmark)",
+      "JV shortlist: Compass Pathways, Atai, Cybin, Mindset Pharma, Filament Health",
+      "First fungal-pathway prediction model under the CEX umbrella"
+    ]
+  },
+  "CEX-21": {
+    title: "Iboga (Tabernanthe iboga and Voacanga africana), Tier 4",
+    background: "Monoterpene indole alkaloid pathway, sister chemistry to Catharanthus roseus vinca alkaloids. Public genome data thin for both species. Voacanga is the sustainable supply alternative to wild-harvested Tabernanthe.",
+    question: "Can a from-scratch genome plus prediction stack on Voacanga africana provide a sustainable, prediction-anchored supply pathway for ibogaine and analogs?",
+    deliverables: [
+      "First Voacanga genome and prediction model",
+      "JV shortlist: DemeRx, Atai, Beckley Psytech",
+      "Sustainability-anchored alkaloid supply reference"
+    ]
+  },
+  "CEX-22": {
+    title: "Kratom (Mitragyna speciosa), Tier 4",
+    background: "Mitragynine, 7-hydroxymitragynine; indole alkaloid pathway. Regulatory status varies by state and country; pharma development active on selective MOR-G-protein-biased mitragynine analogs.",
+    question: "Does prediction-anchored selection support pharma partner programs targeting mitragynine analog ratios in defined-chemotype Mitragyna?",
+    deliverables: [
+      "Analog-ratio prediction model",
+      "JV shortlist: pharma developers of mitragynine derivatives (partner selection contingent on regulatory clarity in target jurisdiction)",
+      "Pharma-aligned chemotype selection reference"
+    ]
+  },
+  "CEX-23": {
+    title: "Kava (Piper methysticum), Tier 4",
+    background: "Kavalactones (kavain, methysticin, yangonin); not a primary terpene or alkaloid pathway, distinct kavalactone biosynthesis. Sterile cultivars, clonal propagation, breeding tractability is limited.",
+    question: "Can prediction-led clonal selection improve kavalactone profile reproducibility in Piper methysticum where sexual breeding is blocked?",
+    deliverables: [
+      "Clonal-selection prediction model with kavalactone-specific feature engineering",
+      "JV shortlist: Pacific Island producer cooperatives, dietary supplement consolidators",
+      "Reproducibility case for sterile clonal supplement crops"
+    ]
+  },
+  "CEX-24": {
+    title: "Opium poppy (Papaver somniferum), Tier 4, licensed-partner only",
+    background: "Benzylisoquinoline alkaloid (BIA) pathway: morphine, codeine, thebaine, noscapine, papaverine. Pangenome assets are mature; multiple reference genomes published, including chromosome-scale assemblies. Largest medicinal alkaloid TAM in this tier; pharma-grade alkaloid supply chain is consolidated and breeding-program competent.",
+    question: "Within strictly licensed pharmaceutical-breeder engagements, does prediction-anchored selection improve alkaloid-ratio targeting (thebaine for buprenorphine and naltrexone synthesis, noscapine for anti-cancer applications) over conventional selection?",
+    deliverables: [
+      "Engagement is exclusively through licensed pharmaceutical breeders and DEA Schedule II registrants in jurisdictions with established legal cultivation (Australia, France, Spain, Turkey, India, UK)",
+      "All work is breeding-acceleration and prediction modeling for licensed partners on alkaloid-ratio prediction, not yield enrichment for unregulated production",
+      "JV shortlist: Sun Pharmaceutical Industries, Tasmanian Alkaloids (Johnson & Johnson), Sanofi, Macfarlan Smith, GlaxoSmithKline opiate raw material division. Partner engagement gated on licensing and compliance review."
+    ]
+  },
+  "CEX-25": {
+    title: "Morning glory (Ipomoea spp.), Tier 4, academic preferred",
+    background: "Ergoline biosynthesis recently elucidated. Research path is plant biology and pathway characterization. Lowest commercial priority of the tier.",
+    question: "Can pathway-characterization research on Ipomoea ergoline biosynthesis be advanced through academic collaboration without commercial yield-enrichment scope?",
+    deliverables: [
+      "Pathway-characterization research output (academic collaboration preferred over JV)",
+      "Commercial yield-enrichment programs are gated by controlled-precursor regulation and are explicitly out of scope",
+      "Foundation for future regulated, partner-led engagement if and when policy permits"
+    ]
+  },
 };
 
 /* ──────────────── DATA ──────────────── */
@@ -1814,6 +2098,45 @@ const GROUPS = [
       { id: "VSC-10", name: "VSC-driven cultivar series ", subname: "sulfur-enriched aroma profile lines", segs: [seg(23, 24, "prep"), seg(25, 28, "grow"), seg(29, 30, "pheno"), s1(31, "submit")] },
       { id: "VSC-11", name: "VSC pharmacology + bioavailability ", subname: "long-form metabolic & PK study", segs: [seg(27, 30, "active"), seg(31, 32, "write"), s1(33, "submit")] },
       { id: "VSC-12", name: "VSC entourage effects in clinical settings ", subname: "pair with MC-7 longitudinal", segs: [seg(31, 35, "enroll"), seg(36, 37, "write"), s1(38, "submit")] },
+    ]
+  },
+  {
+    id: "cex", className: "grp-cex",
+    name: "CEX · Method Transfer / Crop Expansion",
+    tag: "JV-funded ports · Tier 1 → 4 · 25 papers",
+    tasks: [
+      // Tier 1 (Year 4-5): Cannabaceae adjacent, anchor for P-CEX-1
+      { id: "CEX-1",  name: "Hops (Humulus lupulus) ", subname: "CEX-G1 portability proof · P-CEX-1 anchor", segs: [seg(13, 16, "prep"), seg(17, 19, "active"), s1(20, "write"), s1(21, "submit")] },
+
+      // Tier 2 (Year 4-7): terpene-rich; near-intact method transfer
+      { id: "CEX-2",  name: "Lavender (Lavandula angustifolia, L. intermedia) ", subname: "Tier 2", segs: [seg(15, 18, "prep"), seg(19, 24, "active"), s1(25, "write"), s1(26, "submit")] },
+      { id: "CEX-3",  name: "Mint (Mentha piperita, M. spicata) ", subname: "Tier 2 · polyploid graph extension", segs: [seg(16, 19, "prep"), seg(20, 25, "active"), s1(26, "write"), s1(27, "submit")] },
+      { id: "CEX-4",  name: "Basil (Ocimum basilicum) ", subname: "Tier 2 · high cultivar diversity", segs: [seg(17, 20, "prep"), seg(21, 26, "active"), s1(27, "write"), s1(28, "submit")] },
+      { id: "CEX-5",  name: "Rosemary (Salvia rosmarinus) ", subname: "Tier 2 · terpene + phenolic", segs: [seg(18, 21, "prep"), seg(22, 27, "active"), s1(28, "write"), s1(29, "submit")] },
+      { id: "CEX-6",  name: "Sage (Salvia officinalis, S. sclarea) ", subname: "Tier 2 · sclareol → Ambrox precursor", segs: [seg(19, 22, "prep"), seg(23, 28, "active"), s1(29, "write"), s1(30, "submit")] },
+      { id: "CEX-7",  name: "Patchouli (Pogostemon cablin) ", subname: "Tier 2 · clonal fragrance", segs: [seg(20, 23, "prep"), seg(24, 28, "active"), s1(29, "write"), s1(30, "submit")] },
+      { id: "CEX-8",  name: "Vetiver (Chrysopogon zizanioides) ", subname: "Tier 2 · cross-family port (Poaceae)", segs: [seg(20, 23, "prep"), seg(24, 28, "active"), s1(29, "write"), s1(30, "submit")] },
+      { id: "CEX-9",  name: "Tea tree (Melaleuca alternifolia) ", subname: "Tier 2 · ISO 4730 spec selection", segs: [seg(21, 24, "prep"), seg(25, 28, "active"), s1(29, "write"), s1(30, "submit")] },
+      { id: "CEX-10", name: "Citrus (Citrus limon, C. sinensis, C. paradisi) ", subname: "Tier 2 · juice-byproduct streams", segs: [seg(15, 18, "prep"), seg(19, 26, "active"), s1(27, "write"), s1(28, "submit")] },
+      { id: "CEX-11", name: "Eucalyptus (E. globulus, E. radiata) ", subname: "Tier 2 · pharma-grade 1,8-cineole", segs: [seg(17, 20, "prep"), seg(21, 26, "active"), s1(27, "write"), s1(28, "submit")] },
+      { id: "CEX-12", name: "Frankincense (Boswellia sacra, B. serrata) ", subname: "Tier 2 · CITES-aligned breeding", segs: [seg(19, 22, "prep"), seg(23, 28, "active"), s1(29, "write"), s1(30, "submit")] },
+      { id: "CEX-13", name: "Pine (Pinus spp., for terpene production) ", subname: "Tier 2 · large gymnosperm graph", segs: [seg(18, 21, "prep"), seg(22, 27, "active"), s1(28, "write"), s1(29, "submit")] },
+
+      // Tier 3 (Year 5-8): high-value commodity; new pathway-grouped feature engineering
+      { id: "CEX-14", name: "Cacao (Theobroma cacao) ", subname: "Tier 3 · flavanol + methylxanthine", segs: [seg(19, 22, "prep"), seg(23, 30, "active"), s1(31, "write"), s1(32, "submit")] },
+      { id: "CEX-15", name: "Tea (Camellia sinensis) ", subname: "Tier 3 · catechin + theanine", segs: [seg(21, 23, "prep"), seg(24, 30, "active"), s1(31, "write"), s1(32, "submit")] },
+      { id: "CEX-16", name: "Coffee (Coffea arabica, C. canephora) ", subname: "Tier 3 · climate-stress + cup quality", segs: [seg(22, 24, "prep"), seg(25, 31, "active"), s1(32, "write"), s1(33, "submit")] },
+      { id: "CEX-17", name: "Vanilla (Vanilla planifolia) ", subname: "Tier 3 · disease-resistance + yield", segs: [seg(23, 25, "prep"), seg(26, 32, "active"), s1(33, "write"), s1(34, "submit")] },
+      { id: "CEX-18", name: "Saffron (Crocus sativus) ", subname: "Tier 3 · sterile triploid management", segs: [seg(24, 26, "prep"), seg(27, 32, "active"), s1(33, "write"), s1(34, "submit")] },
+      { id: "CEX-19", name: "Wine grape (Vitis vinifera) ", subname: "Tier 3 · terpene + polyphenol", segs: [seg(20, 23, "prep"), seg(24, 31, "active"), s1(32, "write"), s1(33, "submit")] },
+
+      // Tier 4 (Year 6-9): psychedelic and medicinal alkaloids
+      { id: "CEX-20", name: "Psilocybe cubensis ", subname: "Tier 4 · plant-to-fungal port", segs: [seg(23, 26, "prep"), seg(27, 32, "active"), s1(33, "write"), s1(34, "submit")] },
+      { id: "CEX-21", name: "Iboga (Tabernanthe iboga, Voacanga africana) ", subname: "Tier 4 · monoterpene indole alkaloids", segs: [seg(25, 28, "prep"), seg(29, 33, "active"), s1(34, "write"), s1(35, "submit")] },
+      { id: "CEX-22", name: "Kratom (Mitragyna speciosa) ", subname: "Tier 4 · MOR-biased mitragynine analogs", segs: [seg(26, 28, "gate"), seg(29, 33, "active"), s1(34, "write"), s1(35, "submit")] },
+      { id: "CEX-23", name: "Kava (Piper methysticum) ", subname: "Tier 4 · clonal kavalactone selection", segs: [seg(27, 29, "prep"), seg(30, 34, "active"), s1(35, "write"), s1(36, "submit")] },
+      { id: "CEX-24", name: "Opium poppy (Papaver somniferum) ", subname: "Tier 4 · licensed pharma partners only", segs: [seg(25, 28, "gate"), seg(29, 34, "active"), s1(35, "write"), s1(36, "submit")] },
+      { id: "CEX-25", name: "Morning glory (Ipomoea spp.) ", subname: "Tier 4 · academic, ergoline pathway", segs: [seg(28, 31, "prep"), seg(32, 36, "active"), s1(37, "write"), s1(38, "submit")] },
     ]
   },
 ];
